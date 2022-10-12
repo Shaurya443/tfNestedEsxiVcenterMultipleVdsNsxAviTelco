@@ -19,6 +19,41 @@ fi
 #
 # Sanity checks
 #
+# check if the TKG binaries and ova files are present
+echo "Checking TKG/Tanzu variables.json parameters..."
+if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
+  echo "==> Checking Tanzu Binaries and OVA..."
+  if [ -f $(jq -c -r .tkg.tanzu_bin_location $jsonFile) ]; then
+    echo "   +++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile): OK."
+  else
+    echo "   +++ERROR+++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile) file not found!!"
+    exit 255
+  fi
+  if [ -f $(jq -c -r .tkg.k8s_bin_location $jsonFile) ]; then
+    echo "   +++ $(jq -c -r .tkg.k8s_bin_location $jsonFile): OK."
+  else
+    echo "   +++ERROR+++ $(jq -c -r .tkg.k8s_bin_location) file not found!!"
+    exit 255
+  fi
+  if [ -f $(jq -c -r .tkg.ova_location $jsonFile) ]; then
+    echo "   +++ $(jq -c -r .tkg.ova_location $jsonFile): OK."
+  else
+    echo "   +++ERROR+++ $(jq -c -r .tkg.ova_location) file not found!!"
+    exit 255
+  fi
+fi
+#
+# check if Avi file is present
+if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
+  echo "==> Checking Avi OVA..."
+    if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
+      echo "   +++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
+    else
+      echo "   +++ERROR+++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
+      exit 255
+    fi
+fi
+#
 # check if the amount of external IP is enough for all the interfaces of the tier0
 IFS=$'\n'
 ip_count_external_tier0=$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_ips | length' $jsonFile)
@@ -181,9 +216,99 @@ fi
 #
 # Build of the config of Avi
 #
-if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] && [[ $(jq -c -r .avi.config.create $jsonFile) == true ]] ; then
-  tf_init_apply "Build of the config of Avi - This should take less than 20 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../$jsonFile
+rm avi.json
+IFS=$'\n'
+avi_json=""
+avi_networks="[]"
+# copy cidr from nsx.config.segments_overlay to avi.config.cloud.networks (useful for vCenter cloud as we can't retrieve the CIDR through API)
+for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
+do
+  network_name=$(echo $network | jq -c -r .name)
+  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+  do
+    if [[ $(echo $segment | jq -r .display_name) == $(echo $network_name) ]] ; then
+      cidr=$(echo $segment | jq -r .cidr)
+    fi
+  done
+  new_network=$(echo $network | jq '. += {"cidr": "'$(echo $cidr)'"}')
+  avi_networks=$(echo $avi_networks | jq '. += ['$(echo $new_network)']')
+done
+avi_json=$(jq -c -r . $jsonFile | jq '. | del (.avi.config.cloud.networks)')
+avi_json=$(echo $avi_json | jq '.avi.config.cloud += {"networks": '$(echo $avi_networks)'}')
+# copy cidr from avi.config.cloud.networks to avi.config.virtual_services.http
+if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.http | length') -gt 0 ]] ; then
+  avi_http_vs=[]
+  for vs in $(echo $avi_json | jq -c -r .avi.config.virtual_services.http[])
+  do
+    for network in $(echo $avi_json | jq -c -r .avi.config.cloud.networks[])
+    do
+      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+        cidr=$(echo $network | jq -r .cidr)
+      fi
+      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+        type=$(echo $network | jq -r .type)
+      fi
+    done
+    new_vs_http=$(echo $vs | jq '. += {"cidr": "'$(echo $cidr)'", "type": "'$(echo $type)'"}')
+    avi_http_vs=$(echo $avi_dns_vs | jq '. += ['$(echo $new_vs_http)']')
+  done
 fi
+# copy cidr from avi.config.cloud.networks to avi.config.virtual_services.dns
+if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.dns | length') -gt 0 ]] ; then
+  avi_dns_vs=[]
+  for vs in $(echo $avi_json | jq -c -r .avi.config.virtual_services.dns[])
+  do
+    for network in $(echo $avi_json | jq -c -r .avi.config.cloud.networks[])
+    do
+      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+        cidr=$(echo $network | jq -r .cidr)
+      fi
+      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+        type=$(echo $network | jq -r .type)
+      fi
+    done
+    new_vs_dns=$(echo $vs | jq '. += {"cidr": "'$(echo $cidr)'", "type": "'$(echo $type)'"}')
+    avi_dns_vs=$(echo $avi_dns_vs | jq '. += ['$(echo $new_vs_dns)']')
+  done
+fi
+avi_json=$(echo $avi_json | jq '. | del (.avi.config.virtual_services.dns)')
+avi_json=$(echo $avi_json | jq '.avi.config.virtual_services += {"dns": '$(echo $avi_dns_vs)'}')
+echo $avi_json | jq . | tee avi.json
+#
+if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] && [[ $(jq -c -r .avi.config.create $jsonFile) == true ]] ; then
+  tf_init_apply "Build of the config of Avi - This should take less than 20 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../avi.json
+fi
+#
+# TKG prep
+#
+if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] && [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
+  tf_init_apply "Prep of TKG - This should take less than 20 minutes" tkg/prep ../../logs/tf_tkg_prep.stdout ../../logs/tf_tkg_prep.errors ../../$jsonFile
+fi
+#
+# Templating of TKG mgmt-cluster
+#
+if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] ; then
+  tf_init_apply "Templating of TKG mgmt cluster - This should take less than one minute" tkg/mgmt_cluster_template ../../logs/tf_mgmt_cluster_template.stdout ../../logs/tf_mgmt_cluster_template.errors ../../$jsonFile
+fi
+#
+# Build of TKG mgmt-cluster
+#
+if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_build $jsonFile) == true ]] ; then
+  tf_init_apply "Templating of TKG mgmt cluster - This should take less than 15 minutes" tkg/mgmt_cluster_build ../../logs/tf_mgmt_cluster_build.stdout ../../logs/tf_mgmt_cluster_build.errors ../../$jsonFile
+fi
+#
+# Templating of TKG workload-clusters
+#
+if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] ; then
+  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than one minute" tkg/workload_clusters_templates ../../logs/tf_workload_clusters_templates.stdout ../../logs/tf_workload_clusters_templates.errors ../../$jsonFile
+fi
+#
+# Build of TKG workload-clusters
+#
+if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_build $jsonFile) == true ]] ; then
+  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than 15 minutes" tkg/workload_clusters_builds ../../logs/tf_workload_clusters_builds.stdout ../../logs/tf_workload_clusters_builds.errors ../../$jsonFile
+fi
+#
 #
 # Output message
 #

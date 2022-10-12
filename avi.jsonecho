@@ -23,14 +23,14 @@
     },
     "network_nsx_external": {
       "name": "vxw-dvs-34-virtualwire-124-sid-1080123-sof2-01-vc08-avi-dev120"
-      },
+    },
     "network_nsx_overlay": {
       "name": "vxw-dvs-34-virtualwire-125-sid-1080124-sof2-01-vc08-avi-dev121"
-      },
+    },
     "network_nsx_overlay_edge": {
       "name": "vxw-dvs-34-virtualwire-126-sid-1080125-sof2-01-vc08-avi-dev122"
-      }
-    },
+    }
+  },
   "dns": {
     "nameserver": "10.41.134.134",
     "domain": "avi.com"
@@ -41,7 +41,10 @@
   },
   "dns_ntp": {
     "create": true,
-    "dns": ["10.23.108.1", "10.16.142.111"],
+    "dns": [
+      "10.23.108.1",
+      "10.16.142.111"
+    ],
     "name": "dns-ntp",
     "cpu": 2,
     "memory": 4096,
@@ -53,14 +56,20 @@
     "netplanFile": "/etc/netplan/50-cloud-init.yaml",
     "bind": {
       "keyName": "myKeyName",
-      "forwarders": ["10.23.108.1", "10.23.108.2", "10.16.142.111"],
+      "forwarders": [
+        "10.23.108.1",
+        "10.23.108.2",
+        "10.16.142.111"
+      ],
       "reverse": "134.41.10"
     },
     "ntp": "time.vmware.com,pool.ntp.org"
   },
   "external_gw": {
     "create": true,
-    "dns": ["10.41.134.134"],
+    "dns": [
+      "10.41.134.134"
+    ],
     "name": "external-gw",
     "cpu": 2,
     "memory": 4096,
@@ -73,8 +82,7 @@
     "avi_sdk_version": "22.1.1",
     "netplanFile": "/etc/netplan/50-cloud-init.yaml",
     "routes_description": "the following routes will be installed under the external interface",
-    "routes":
-    [
+    "routes": [
       {
         "to": "200.100.0.0/16",
         "via": "172.16.100.110"
@@ -86,7 +94,9 @@
     "iso_source_location": "/home/ubuntu/bin/VMware-VMvisor-Installer-7.0U3g-20328353.x86_64.iso",
     "iso_location": "/tmp/esxi",
     "boot_cfg_location": "efi/boot/boot.cfg",
-    "boot_cfg_lines": ["kernelopt=runweasel ks=cdrom:/KS_CUST.CFG"],
+    "boot_cfg_lines": [
+      "kernelopt=runweasel ks=cdrom:/KS_CUST.CFG"
+    ],
     "bios": "efi",
     "guest_id": "vmkernel65Guest",
     "keyboard_type": "US Default",
@@ -131,7 +141,7 @@
       "domain_name": "domain.local"
     },
     "ceip_enabled": false,
-    "dvs" : {
+    "dvs": {
       "basename": "dvs",
       "mtu": 1500,
       "discovery_protocol": "lldp",
@@ -142,23 +152,42 @@
           "netmask": "255.255.252.0",
           "prefix": "22",
           "gateway": "10.41.132.1",
-          "esxi_ips": ["10.41.134.131", "10.41.134.132", "10.41.134.133"],
-          "esxi_ips_temp": ["10.41.134.136", "10.41.134.137", "10.41.134.138"],
+          "esxi_ips": [
+            "10.41.134.131",
+            "10.41.134.132",
+            "10.41.134.133"
+          ],
+          "esxi_ips_temp": [
+            "10.41.134.136",
+            "10.41.134.137",
+            "10.41.134.138"
+          ],
           "vcenter_ip": "10.41.134.135",
           "dns_ntp_ip": "10.41.134.134",
           "external_gw_ip": "10.41.134.140",
           "nsx_ip": "10.41.134.136",
-          "nsx_edge": ["10.41.134.138", "10.41.134.139"]
+          "nsx_edge": [
+            "10.41.134.138",
+            "10.41.134.139"
+          ]
         },
         "VMotion": {
           "name": "VMotion",
-          "esxi_ips": ["100.64.133.11", "100.64.133.12", "100.64.133.13"],
+          "esxi_ips": [
+            "100.64.133.11",
+            "100.64.133.12",
+            "100.64.133.13"
+          ],
           "netmask": "255.255.255.0",
           "prefix": "24"
         },
         "VSAN": {
           "name": "VSAN",
-          "esxi_ips": ["100.64.132.11", "100.64.132.12", "100.64.132.13"],
+          "esxi_ips": [
+            "100.64.132.11",
+            "100.64.132.12",
+            "100.64.132.13"
+          ],
           "netmask": "255.255.255.0",
           "prefix": "24"
         },
@@ -176,8 +205,13 @@
           "netmask": "255.255.255.0",
           "prefix": "24",
           "external_gw_ip": "172.16.100.100",
-          "tier0_vips": ["172.16.100.110", "172.16.100.120"],
-          "tier0_ips": ["172.16.100.111", "172.16.100.112", "172.16.100.113", "172.16.100.114"]
+          "tier0_vips": [
+            "172.16.100.110"
+          ],
+          "tier0_ips": [
+            "172.16.100.111",
+            "172.16.100.112"
+          ]
         }
       }
     }
@@ -190,7 +224,7 @@
       "create": true,
       "ova_location": "/home/ubuntu/bin/nsx-unified-appliance-3.2.1.0.0.19801963.ova"
     },
-    "manager" : {
+    "manager": {
       "create": true,
       "deployment": "Medium",
       "basename": "nsx-manager",
@@ -199,8 +233,7 @@
     "config": {
       "create": true,
       "dhcp_servers_api_endpoint": "/policy/api/v1/infra/dhcp-server-configs",
-      "dhcp_servers":
-      [
+      "dhcp_servers": [
         {
           "name": "dhcp-0",
           "server_address": "100.65.222.1/30",
@@ -274,25 +307,30 @@
                   "vds_uplink_name": "uplink1"
                 }
               ],
-              "transport_zones": [ { "transport_zone_name": "tz_overlay" } ]
+              "transport_zones": [
+                {
+                  "transport_zone_name": "tz_overlay"
+                }
+              ]
             }
           ]
         }
       ],
-      "edge_node":
-      {
+      "edge_node": {
         "basename": "edge-0",
         "cpu": 4,
         "memory": 8192,
         "disk": 200,
         "data_network": "segment2",
         "host_switch_spec": {
-          "host_switches" : [
+          "host_switches": [
             {
               "host_switch_name": "nsxHostSwitch_overlay",
               "host_switch_type": "NVDS",
               "host_switch_mode": "STANDARD",
-              "host_switch_profile_names": ["uplink-profile-default"],
+              "host_switch_profile_names": [
+                "uplink-profile-default"
+              ],
               "pnics": [
                 {
                   "device_name": "fp-eth0",
@@ -300,26 +338,31 @@
                 }
               ],
               "ip_pool_name": "ip_pool_tep_edge",
-              "transport_zone_names": ["tz_overlay"]
+              "transport_zone_names": [
+                "tz_overlay"
+              ]
             },
             {
               "host_switch_name": "nsxHostSwitch_external",
               "host_switch_type": "NVDS",
               "host_switch_mode": "STANDARD",
-              "host_switch_profile_names": ["uplink-profile-default"],
+              "host_switch_profile_names": [
+                "uplink-profile-default"
+              ],
               "pnics": [
                 {
                   "device_name": "fp-eth1",
                   "uplink_name": "uplink-1"
                 }
               ],
-              "transport_zone_names": ["tz_vlan"]
+              "transport_zone_names": [
+                "tz_vlan"
+              ]
             }
           ]
         }
       },
-      "edge_clusters":
-      [
+      "edge_clusters": [
         {
           "display_name": "my-edge-cluster-01",
           "members_name": [
@@ -328,94 +371,103 @@
           ]
         }
       ],
-      "tier0s":
-      [
+      "tier0s": [
         {
           "display_name": "tier0-0-oam-vrf",
-          "ha_mode" : "ACTIVE_STANDBY",
+          "ha_mode": "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-01",
-          "interfaces" :
-          [
+          "interfaces": [
             {
               "edge_name": "edge-01",
               "segment_name": "segment-external",
-              "type" : "EXTERNAL",
-              "display_name" : "if-ext-0",
+              "type": "EXTERNAL",
+              "display_name": "if-ext-0",
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
             },
             {
               "edge_name": "edge-02",
               "segment_name": "segment-external",
-              "type" : "EXTERNAL",
-              "display_name" : "if-ext-1",
+              "type": "EXTERNAL",
+              "display_name": "if-ext-1",
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
             }
           ],
-          "static_routes":
-          [
+          "static_routes": [
             {
-              "display_name" : "default-route",
-              "network" : "0.0.0.0/0",
-              "next_hops" : [ { "ip_address": "172.16.100.100" } ]
+              "display_name": "default-route",
+              "network": "0.0.0.0/0",
+              "next_hops": [
+                {
+                  "ip_address": "172.16.100.100"
+                }
+              ]
             }
           ],
-          "ha_vips":
-          [
+          "ha_vips": [
             {
-              "interfaces" : ["if-ext-0", "if-ext-1"],
+              "interfaces": [
+                "if-ext-0",
+                "if-ext-1"
+              ],
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
             }
           ]
         },
         {
           "display_name": "tier0-1-signaling-vrf",
-          "ha_mode" : "ACTIVE_STANDBY",
+          "ha_mode": "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-01",
-          "interfaces" :
-          [
+          "interfaces": [
             {
               "edge_name": "edge-01",
               "segment_name": "segment-external",
-              "type" : "EXTERNAL",
-              "display_name" : "if-ext-0",
+              "type": "EXTERNAL",
+              "display_name": "if-ext-0",
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
             },
             {
               "edge_name": "edge-02",
               "segment_name": "segment-external",
-              "type" : "EXTERNAL",
-              "display_name" : "if-ext-1",
+              "type": "EXTERNAL",
+              "display_name": "if-ext-1",
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
             }
           ],
-          "static_routes":
-          [
+          "static_routes": [
             {
-              "display_name" : "default-route",
-              "network" : "0.0.0.0/0",
-              "next_hops" : [ { "ip_address": "172.16.100.100" } ]
+              "display_name": "default-route",
+              "network": "0.0.0.0/0",
+              "next_hops": [
+                {
+                  "ip_address": "172.16.100.100"
+                }
+              ]
             }
           ],
-          "ha_vips":
-          [
+          "ha_vips": [
             {
-              "interfaces" : ["if-ext-0", "if-ext-1"],
+              "interfaces": [
+                "if-ext-0",
+                "if-ext-1"
+              ],
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
             }
           ]
         }
       ],
-      "tier1s":
-      [
+      "tier1s": [
         {
           "tier0": "tier0-0-oam-vrf",
           "display_name": "my-tier1-A",
-          "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
+          "route_advertisement_types": [
+            "TIER1_STATIC_ROUTES",
+            "TIER1_CONNECTED",
+            "TIER1_LB_VIP"
+          ],
           "dhcp_server": "dhcp-0"
         }
       ],
-      "segments_overlay":
-      [
+      "segments_overlay": [
         {
           "display_name": "my-segment-mgmt",
           "tier1": "my-tier1-A",
@@ -423,7 +475,9 @@
           "cidr": "200.100.11.0/24",
           "gw": "1",
           "avi_controller": "11",
-          "dhcp_ranges": ["200.100.11.100-200.100.11.199"],
+          "dhcp_ranges": [
+            "200.100.11.100-200.100.11.199"
+          ],
           "description": "keep the management segment at the first position in the segment_overlay list - do not remove"
         },
         {
@@ -432,9 +486,15 @@
           "transport_zone": "tz_overlay",
           "cidr": "200.100.21.0/24",
           "gw": "1",
-          "dhcp_ranges": ["200.100.21.100-200.100.21.199"],
+          "dhcp_ranges": [
+            "200.100.21.100-200.100.21.199"
+          ],
           "description": "keep the segment server 1 at the second position in the segment_overlay list - do not remove",
-          "avi_app_server_ips": ["200.100.21.11", "200.100.21.12", "200.100.21.13"]
+          "avi_app_server_ips": [
+            "200.100.21.11",
+            "200.100.21.12",
+            "200.100.21.13"
+          ]
         },
         {
           "display_name": "my-segment-tkg-2",
@@ -442,7 +502,9 @@
           "transport_zone": "tz_overlay",
           "cidr": "200.100.22.0/24",
           "gw": "1",
-          "dhcp_ranges": ["200.100.22.100-200.100.22.199"],
+          "dhcp_ranges": [
+            "200.100.22.100-200.100.22.199"
+          ],
           "description": "keep the segment server 2 at the third position in the segment_overlay list - do not remove"
         },
         {
@@ -480,7 +542,9 @@
     "config": {
       "create": false,
       "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
-      "avi_config_tag": "v1.78",
+      "avi_config_tag": "v1.32",
+      "transport_zone_name": "tz_overlay",
+      "content_library_avi": "avi_cloud_nsx",
       "sslkeyandcertificate": [
         {
           "name": "tkg_cert",
@@ -501,7 +565,7 @@
         {
           "name": "tkg-cluster-workload-1",
           "local": true,
-          "config_settings" : {
+          "config_settings": {
             "tenant_vrf": false,
             "se_in_provider_context": true,
             "tenant_access_to_provider_se": true
@@ -510,7 +574,7 @@
         {
           "name": "tkg-cluster-workload-2",
           "local": true,
-          "config_settings" : {
+          "config_settings": {
             "tenant_vrf": false,
             "se_in_provider_context": true,
             "tenant_access_to_provider_se": true
@@ -535,7 +599,9 @@
       ],
       "ipam": {
         "networks": [
-          "my-segment-mgmt", "my-segment-vip-1", "my-segment-vip-2"
+          "my-segment-mgmt",
+          "my-segment-vip-1",
+          "my-segment-vip-2"
         ]
       },
       "cloud": {
@@ -547,7 +613,8 @@
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
             "management": true,
-            "type": "V4"
+            "type": "V4",
+            "cidr": "200.100.11.0/24"
           },
           {
             "name": "my-segment-vip-1",
@@ -555,7 +622,8 @@
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
             "management": false,
-            "type": "V4"
+            "type": "V4",
+            "cidr": "200.100.31.0/24"
           },
           {
             "name": "my-segment-vip-2",
@@ -564,8 +632,9 @@
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
             "management": false,
-            "type": "V4"
-            }
+            "type": "V4",
+            "cidr": "200.100.32.0/24"
+          }
         ]
       },
       "service_engine_groups": [
@@ -622,7 +691,9 @@
               {
                 "port": 53
               }
-            ]
+            ],
+            "cidr": "200.100.31.0/24",
+            "type": "V4"
           }
         ]
       }
@@ -650,7 +721,7 @@
     }
   },
   "tkg": {
-    "prep": false,
+    "prep": true,
     "description": "prep flag will enable the preparation of the external gateway with all the binaries and their associating installations, along with the upload of the OVA and folder/resource pool creation in vCenter",
     "tanzu_bin_location": "/home/ubuntu/bin/tanzu-cli-bundle-linux-amd64.tar.gz",
     "k8s_bin_location": "/home/ubuntu/bin/kubectl-linux-v1.23.8+vmware.2.gz",
@@ -658,9 +729,9 @@
     "ova_network": "my-segment-mgmt",
     "ova_folder_template": "tkg-template",
     "clusters": {
-      "management_template": false,
+      "management_template": true,
       "management_template_description": "this flag will render the yml file in the external gw without building the mgmt cluster",
-      "management_build": false,
+      "management_build": true,
       "management_build_description": "this flag will render the yml file in the external gw and build the mgmt cluster",
       "management": {
         "name": "tkg-cluster-mgmt",
@@ -684,9 +755,9 @@
         "worker_memory": "4096",
         "worker_cpu": "2"
       },
-      "workload_template": false,
+      "workload_template": true,
       "workload_template_description": "this flag will render the yml file in the external gw without building the workload cluster(s)",
-      "workload_build": false,
+      "workload_build": true,
       "workload_build_description": "this flag will render the yml file in the external gw and build the workload cluster(s)",
       "workloads": [
         {
