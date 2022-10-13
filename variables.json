@@ -77,7 +77,7 @@
     [
       {
         "to": "200.100.0.0/16",
-        "via": "172.16.100.110"
+        "via": "172.16.100.111"
       }
     ]
   },
@@ -474,7 +474,9 @@
       "memory": 24768,
       "disk": 128,
       "basename": "avi-controller",
-      "version": "21.1.5"
+      "version": "21.1.4",
+      "ssl_key_name": "avi.key",
+      "ssl_cert_name": "avi.cert"
     },
     "config": {
       "create": false,
