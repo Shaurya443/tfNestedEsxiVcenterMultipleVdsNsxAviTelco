@@ -323,12 +323,7 @@
         {
           "display_name": "my-edge-cluster-01",
           "members_name": [
-            "edge-01"
-          ]
-        },
-        {
-          "display_name": "my-edge-cluster-02",
-          "members_name": [
+            "edge-01",
             "edge-02"
           ]
         }
@@ -347,30 +342,7 @@
               "type" : "EXTERNAL",
               "display_name" : "if-ext-0",
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
-            }
-          ],
-          "static_routes":
-          [
-            {
-              "display_name" : "default-route",
-              "network" : "0.0.0.0/0",
-              "next_hops" : [ { "ip_address": "172.16.100.100" } ]
-            }
-          ],
-          "ha_vips":
-          [
-            {
-              "interfaces" : ["if-ext-0"],
-              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
-            }
-          ]
-        },
-        {
-          "display_name": "tier0-1-signaling-vrf",
-          "ha_mode" : "ACTIVE_STANDBY",
-          "edge_cluster_name": "my-edge-cluster-02",
-          "interfaces" :
-          [
+            },
             {
               "edge_name": "edge-02",
               "segment_name": "segment-external",
@@ -390,7 +362,44 @@
           "ha_vips":
           [
             {
-              "interfaces" : ["if-ext-1"],
+              "interfaces" : ["if-ext-0", "if-ext-1"],
+              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
+            }
+          ]
+        },
+        {
+          "display_name": "tier0-1-signaling-vrf",
+          "ha_mode" : "ACTIVE_STANDBY",
+          "edge_cluster_name": "my-edge-cluster-01",
+          "interfaces" :
+          [
+            {
+              "edge_name": "edge-01",
+              "segment_name": "segment-external",
+              "type" : "EXTERNAL",
+              "display_name" : "if-ext-0",
+              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
+            },
+            {
+              "edge_name": "edge-02",
+              "segment_name": "segment-external",
+              "type" : "EXTERNAL",
+              "display_name" : "if-ext-1",
+              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
+            }
+          ],
+          "static_routes":
+          [
+            {
+              "display_name" : "default-route",
+              "network" : "0.0.0.0/0",
+              "next_hops" : [ { "ip_address": "172.16.100.100" } ]
+            }
+          ],
+          "ha_vips":
+          [
+            {
+              "interfaces" : ["if-ext-0", "if-ext-1"],
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
             }
           ]
@@ -400,13 +409,7 @@
       [
         {
           "tier0": "tier0-0-oam-vrf",
-          "display_name": "tier1-oam",
-          "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
-          "dhcp_server": "dhcp-0"
-        },
-        {
-          "tier0": "tier0-1-signaling-vrf",
-          "display_name": "tier1-signaling",
+          "display_name": "my-tier1-A",
           "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
           "dhcp_server": "dhcp-0"
         }
@@ -415,7 +418,7 @@
       [
         {
           "display_name": "my-segment-mgmt",
-          "tier1": "tier1-oam",
+          "tier1": "my-tier1-A",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.11.0/24",
           "gw": "1",
@@ -425,7 +428,7 @@
         },
         {
           "display_name": "my-segment-tkg-1",
-          "tier1": "tier1-oam",
+          "tier1": "my-tier1-A",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.21.0/24",
           "gw": "1",
@@ -435,7 +438,7 @@
         },
         {
           "display_name": "my-segment-tkg-2",
-          "tier1": "tier1-signaling",
+          "tier1": "my-tier1-A",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.22.0/24",
           "gw": "1",
@@ -444,7 +447,7 @@
         },
         {
           "display_name": "my-segment-vip-1",
-          "tier1": "tier1-oam",
+          "tier1": "my-tier1-A",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.31.0/24",
           "gw": "1",
@@ -453,7 +456,7 @@
         },
         {
           "display_name": "my-segment-vip-2",
-          "tier1": "tier1-signaling",
+          "tier1": "my-tier1-A",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.32.0/24",
           "gw": "1",
