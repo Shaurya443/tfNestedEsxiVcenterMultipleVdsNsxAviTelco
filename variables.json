@@ -4,7 +4,7 @@
     "cluster": "sof2-01-vc08c01",
     "datastore": "sof2-01-vc08c01-vsan",
     "resource_pool": "sof2-01-vc08c01/Resources",
-    "folder": "nicNestedNsx",
+    "folder": "nicNestedNsxTelco",
     "server": "sof2-01-vc08.oc.vmware.com",
     "cl": {
       "name": "ubuntu",
