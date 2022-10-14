@@ -22,6 +22,7 @@ data "template_file" "external_gw_userdata" {
     defaultGw = var.vcenter.dvs.portgroup.management.gateway
     password      = var.ubuntu_password
     hostname = var.external_gw.name
+    ansible_core_version = var.external_gw.ansible_core_version
     ansible_version = var.external_gw.ansible_version
     avi_sdk_version = var.external_gw.avi_sdk_version
     ip_vcenter = var.vcenter.dvs.portgroup.management.vcenter_ip

@@ -69,8 +69,9 @@
     "private_key_path": "~/.ssh/cloudKey",
     "wait_for_guest_net_timeout": 2,
     "username": "ubuntu",
-    "ansible_version": "2.10.7",
-    "avi_sdk_version": "22.1.1",
+    "ansible_core_version": "2.12.5",
+    "ansible_version": "5.7.1",
+    "avi_sdk_version": "21.1.4",
     "netplanFile": "/etc/netplan/50-cloud-init.yaml",
     "routes_description": "the following routes will be installed under the external interface",
     "routes":
@@ -481,16 +482,16 @@
     "config": {
       "create": false,
       "avi_config_repo": "https://github.com/tacobayle/ansibleAviConfig",
-      "avi_config_tag": "v1.78",
+      "avi_config_tag": "v1.8",
       "sslkeyandcertificate": [
         {
           "name": "tkg_cert",
           "type": "SSL_CERTIFICATE_TYPE_SYSTEM",
           "key": {
-            "path": "../../avi.key"
+            "path": "~/ssl_avi/avi.key"
           },
           "cert": {
-            "path": "../../avi.cert",
+            "path": "~/ssl_avi/avi.cert",
             "self_signed": true
           }
         }
@@ -522,7 +523,7 @@
         {
           "access": [
             {
-              "role_ref": "/api/role?name=XXXXXXXXXXX",
+              "role_ref": "/api/role?name=System-Admin",
               "tenant_ref": "/api/tenant?name=admin",
               "all_tenants": false
             }

@@ -3,9 +3,9 @@ controllerPrivateIps: |
 controller:
   cluster: false
   ntp: |
-    ${ntp}
+    [${ntp}]
   dns: |
-    ${dnc}
+    [${dns}]
   environment: vcenter
   floating_ip : ""
 avi_password: ${avi_password}
@@ -21,17 +21,16 @@ portal_configuration: |
   ${portal_configuration}
 tenants: |
   ${tenants}
-roles: |
-  ${roles}
 users: |
   ${users}
 vcenter:
   domains: |
-    [${domains}]
+    [{"name": ${domain}}]
   ipam: |
     ${ipam}
   cloud:
     name: ${cloud_name}
+    dc: ${dc}
     dhcp_enabled: true
     networks: |
       ${networks}
