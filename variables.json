@@ -577,8 +577,8 @@
           "min_scaleout_per_vs": 2,
           "buffer_se": 0,
           "extra_shared_config_memory": 0,
-          "vcpus_per_se": 1,
-          "memory_per_se": 1024,
+          "vcpus_per_se": 2,
+          "memory_per_se": 2048,
           "disk_per_se": 25,
           "realtime_se_metrics": {
             "enabled": true,
@@ -591,8 +591,8 @@
           "min_scaleout_per_vs": 2,
           "buffer_se": 0,
           "extra_shared_config_memory": 0,
-          "vcpus_per_se": 1,
-          "memory_per_se": 1024,
+          "vcpus_per_se": 2,
+          "memory_per_se": 2048,
           "disk_per_se": 25,
           "realtime_se_metrics": {
             "enabled": true,
@@ -605,8 +605,8 @@
           "min_scaleout_per_vs": 2,
           "buffer_se": 0,
           "extra_shared_config_memory": 0,
-          "vcpus_per_se": 1,
-          "memory_per_se": 1024,
+          "vcpus_per_se": 2,
+          "memory_per_se": 2048,
           "disk_per_se": 25,
           "realtime_se_metrics": {
             "enabled": true,
