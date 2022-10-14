@@ -208,6 +208,21 @@
           "lease_time": 86400
         }
       ],
+      "groups_api_endpoint": "/policy/api/v1/infra/domains/default/groups",
+      "groups": [
+        {
+          "display_name" : "Avi_se",
+          "expression" : [ {
+            "member_type" : "VirtualMachine",
+            "key" : "Name",
+            "operator" : "STARTSWITH",
+            "value" : "Avi_se",
+            "resource_type" : "Condition"
+          } ]
+        }
+      ],
+      "exclusion_list_api_endpoint": "/policy/api/v1/infra/settings/firewall/security/exclude-list",
+      "exclusion_list_groups": ["Avi_se"],
       "ip_pools": [
         {
           "name": "ip_pool_tep_tn",

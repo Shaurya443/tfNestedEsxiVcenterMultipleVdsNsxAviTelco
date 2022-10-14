@@ -25,13 +25,13 @@ resource "null_resource" "prep_tkg_transfer" {
 
   provisioner "remote-exec" {
     inline = [
-      "tar -xf basename(${var.tkg.tanzu_bin_location})",
+      "tar -xf ${basename(var.tkg.tanzu_bin_location)}",
       "cd cli",
       "sudo install core/v0.25.0/tanzu-core-linux_amd64 /usr/local/bin/tanzu",
       "tanzu init",
       "tanzu plugin sync",
       "cd ~",
-      "tar -xf basename(${var.tkg.k8s_bin_location})",
+      "gunzip ${basename(var.tkg.k8s_bin_location)}",
       "chmod ugo+x kubectl-linux-v1.23.8+vmware.2",
       "sudo install kubectl-linux-v1.23.8+vmware.2 /usr/local/bin/kubectl",
       "cd ~/cli",
@@ -45,7 +45,7 @@ resource "null_resource" "prep_tkg_transfer" {
       "sudo mv ./kbld-linux-amd64-v0.34.0+vmware.1 /usr/local/bin/kbld",
       "gunzip imgpkg-linux-amd64-v0.29.0+vmware.1.gz",
       "chmod ugo+x imgpkg-linux-amd64-v0.29.0+vmware.1",
-      "mv ./imgpkg-linux-amd64-v0.29.0+vmware.1 /usr/local/bin/imgpkg"
+      "sudo mv ./imgpkg-linux-amd64-v0.29.0+vmware.1 /usr/local/bin/imgpkg"
     ]
   }
 }

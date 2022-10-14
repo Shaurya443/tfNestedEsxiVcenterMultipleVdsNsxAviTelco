@@ -1,0 +1,20 @@
+{
+  "members" : [ "/infra/domains/default/groups/Avi_se", "/infra/domains/default/groups/7e8d14d0-ae7a-4bf2-b3e2-74a8c2d92347" ],
+  "resource_type" : "PolicyExcludeList",
+  "id" : "exclude-list",
+  "display_name" : "exclude-list",
+  "path" : "/infra/settings/firewall/security/exclude-list",
+  "relative_path" : "exclude-list",
+  "parent_path" : "/infra",
+  "unique_id" : "4c3e9257-13f5-4ab0-89ca-5ccba46d4673",
+  "realization_id" : "4c3e9257-13f5-4ab0-89ca-5ccba46d4673",
+  "marked_for_delete" : false,
+  "overridden" : false,
+  "_create_time" : 1665701917209,
+  "_create_user" : "system",
+  "_last_modified_time" : 1665779122614,
+  "_last_modified_user" : "admin",
+  "_system_owned" : false,
+  "_protection" : "NOT_PROTECTED",
+  "_revision" : 12
+}

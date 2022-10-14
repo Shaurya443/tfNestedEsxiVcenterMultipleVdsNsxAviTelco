@@ -69,6 +69,19 @@ resource "null_resource" "create_dhcp_servers" {
   }
 }
 
+resource "null_resource" "create_groups" {
+  depends_on = [null_resource.create_transport_node_profiles]
+  provisioner "local-exec" {
+    command = "/bin/bash bash/groups.sh"
+  }
+}
+
+resource "null_resource" "update_exclusion_list" {
+  depends_on = [null_resource.create_groups]
+  provisioner "local-exec" {
+    command = "/bin/bash bash/exclusion_list.sh"
+  }
+}
 
 resource "null_resource" "create_host_transport_nodes" {
   depends_on = [null_resource.create_transport_node_profiles]
