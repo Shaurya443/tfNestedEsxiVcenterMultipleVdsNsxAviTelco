@@ -68,16 +68,16 @@ if [[ $tier0_ifaces -gt $ip_count_external_tier0 ]] ; then
   exit 255
 fi
 # check if the amount of interfaces in vip config is equal to two for each tier0
-for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
-do
-  for vip in $(echo $tier0 | jq -c -r .ha_vips[])
-  do
-    if [[ $(echo $vip | jq -c -r '.interfaces | length') -ne 2 ]] ; then
-      echo "Amount of interfaces (.nsx.config.tier0s[].ha_vips[].interfaces) needs to be equal to 2; tier0 called $(echo $tier0 | jq -c -r .display_name) has $(echo $vip | jq -c -r '.interfaces | length') interfaces for its ha_vips"
-      exit 255
-    fi
-  done
-done
+#for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
+#do
+#  for vip in $(echo $tier0 | jq -c -r .ha_vips[])
+#  do
+#    if [[ $(echo $vip | jq -c -r '.interfaces | length') -ne 2 ]] ; then
+#      echo "Amount of interfaces (.nsx.config.tier0s[].ha_vips[].interfaces) needs to be equal to 2; tier0 called $(echo $tier0 | jq -c -r .display_name) has $(echo $vip | jq -c -r '.interfaces | length') interfaces for its ha_vips"
+#      exit 255
+#    fi
+#  done
+#done
 # check if the amount of external vip is enough for all the vips of the tier0s
 vip_count_external_tier0=$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_vips | length' $jsonFile)
 tier0_vips=0
