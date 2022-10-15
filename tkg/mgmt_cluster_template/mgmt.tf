@@ -63,7 +63,7 @@ data "template_file" "mgmt" {
 }
 
 resource "null_resource" "transfer_files" {
-  count = length(var.tkg.clusters.workloads)
+
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"

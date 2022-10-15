@@ -667,7 +667,7 @@
     }
   },
   "tkg": {
-    "prep": false,
+    "prep": true,
     "description": "prep flag will enable the preparation of the external gateway with all the binaries and their associating installations, along with the upload of the OVA and folder/resource pool creation in vCenter",
     "tanzu_bin_location": "/home/ubuntu/bin/tanzu-cli-bundle-linux-amd64.tar.gz",
     "k8s_bin_location": "/home/ubuntu/bin/kubectl-linux-v1.23.8+vmware.2.gz",
