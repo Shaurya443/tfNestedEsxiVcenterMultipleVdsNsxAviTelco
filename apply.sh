@@ -283,7 +283,7 @@ if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.dns | length') -
 fi
 avi_json=$(echo $avi_json | jq '. | del (.avi.config.virtual_services.dns)')
 avi_json=$(echo $avi_json | jq '.avi.config.virtual_services += {"dns": '$(echo $avi_dns_vs)'}')
-echo $avi_json | jq . | tee avi.json
+echo $avi_json | jq . | tee avi.json > /dev/null
 #
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] && [[ $(jq -c -r .avi.config.create $jsonFile) == true ]] ; then
   tf_init_apply "Build of the config of Avi - This should take less than 20 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../avi.json
