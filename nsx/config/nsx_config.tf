@@ -70,7 +70,7 @@ resource "null_resource" "create_dhcp_servers" {
 }
 
 resource "null_resource" "create_groups" {
-  depends_on = [null_resource.create_transport_node_profiles]
+  depends_on = [null_resource.create_dhcp_servers]
   provisioner "local-exec" {
     command = "/bin/bash bash/groups.sh"
   }
