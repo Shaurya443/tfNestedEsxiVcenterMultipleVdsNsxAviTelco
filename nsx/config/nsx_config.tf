@@ -91,7 +91,7 @@ resource "null_resource" "create_host_transport_nodes" {
 }
 
 resource "null_resource" "create_edge_nodes" {
-  depends_on = [null_resource.create_host_transport_nodes]
+  depends_on = [null_resource.register_compute_manager]
   provisioner "local-exec" {
     command = "/bin/bash bash/edges.sh"
   }
