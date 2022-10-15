@@ -64,7 +64,7 @@ resource "null_resource" "ansible_avi" {
 
 
   provisioner "file" {
-    content = data.template_file.avi_values
+    content = data.template_file.avi_values.rendered
     destination = "avi_values.yml"
   }
 

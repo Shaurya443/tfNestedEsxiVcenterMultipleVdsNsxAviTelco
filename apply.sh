@@ -42,7 +42,6 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
     exit 255
   fi
 fi
-#
 # check if Avi file is present
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
   echo "==> Checking Avi OVA..."
@@ -50,6 +49,16 @@ if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .
       echo "   +++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
     else
       echo "   +++ERROR+++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
+      exit 255
+    fi
+fi
+# check if NSX file is present
+if [[ $(jq -c -r .nsx.manager.create $jsonFile) == true ]] || [[ $(jq -c -r .nsx.content_library.create $jsonFile) == true ]] ; then
+  echo "==> Checking NSX OVA..."
+    if [ -f $(jq -c -r .nsx.content_library.ova_location $jsonFile) ]; then
+      echo "   +++ $(jq -c -r .nsx.content_library.ova_location $jsonFile): OK."
+    else
+      echo "   +++ERROR+++ $(jq -c -r .nsx.content_library.ova_location $jsonFile) file not found!!"
       exit 255
     fi
 fi
