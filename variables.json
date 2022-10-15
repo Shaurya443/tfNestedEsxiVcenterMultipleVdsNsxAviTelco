@@ -211,12 +211,12 @@
       "groups_api_endpoint": "/policy/api/v1/infra/domains/default/groups",
       "groups": [
         {
-          "display_name" : "Avi_se",
+          "display_name" : "Avi-se",
           "expression" : [ {
             "member_type" : "VirtualMachine",
             "key" : "Name",
             "operator" : "STARTSWITH",
-            "value" : "Avi_se",
+            "value" : "Avi-se",
             "resource_type" : "Condition"
           } ]
         }
