@@ -1,6 +1,6 @@
 
 resource "null_resource" "transfer_files" {
-  count = length(var.tkg.clusters.workloads)
+
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
@@ -11,13 +11,13 @@ resource "null_resource" "transfer_files" {
 
   provisioner "remote-exec" {
     inline = [
-      "tanzu cluster create ${var.tkg.clusters.workloads[count.index].name} -f workload${count.index + 1 }.yml -v 6"
+      "/bin/bash govc_mgmt.sh"
     ]
   }
 
   provisioner "remote-exec" {
     inline = [
-      "/bin/bash govc_mgmt.sh"
+      "tanzu management-cluster create ${var.tkg.clusters.management.name} -f tkg-cluster-mgmt.yml -v 6"
     ]
   }
 

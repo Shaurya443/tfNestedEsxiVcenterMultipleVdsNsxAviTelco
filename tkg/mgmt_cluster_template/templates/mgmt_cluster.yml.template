@@ -64,7 +64,7 @@ VSPHERE_FOLDER: /${datacenter}/vm/${vcenter_folder}
 VSPHERE_IGNORE_PCI_DEVICES_ALLOW_LIST: ""
 #VSPHERE_INSECURE: "true"
 VSPHERE_NETWORK: /${datacenter}/network/${vsphere_network}
-VSPHERE_PASSWORD: <encoded:{vcenter_password_base64}>
+VSPHERE_PASSWORD: <encoded:${vcenter_password_base64}>
 VSPHERE_RESOURCE_POOL: /${datacenter}/host/${cluster}/Resources/${vcenter_resource_pool}
 VSPHERE_SERVER: ${vsphere_server}
 VSPHERE_SSH_AUTHORIZED_KEY: |-

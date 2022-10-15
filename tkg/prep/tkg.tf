@@ -174,3 +174,22 @@ resource "null_resource" "govc_run" {
     ]
   }
 }
+
+resource "null_resource" "retrieve_vcenter_finger_print" {
+  provisioner "local-exec" {
+    command = "rm -f vcenter_finger_print.txt ; echo | openssl s_client -connect ${var.vcenter.name}.${var.dns.domain}:443 | openssl x509 -fingerprint -noout |  cut -d\"=\" -f2 | tee vcenter_finger_print.txt > /dev/null "
+  }
+}
+
+resource "null_resource" "copy_avi_cert_locally" {
+  provisioner "local-exec" {
+    command = "scp -i ${var.external_gw.private_key_path} -o StrictHostKeyChecking=no ${var.external_gw.username}@${var.vcenter.dvs.portgroup.management.external_gw_ip}:/home/${var.external_gw.username}/ssl_avi/avi.cert $PWD/avi.cert"
+  }
+}
+
+resource "null_resource" "move_files" {
+  depends_on = [null_resource.retrieve_vcenter_finger_print, null_resource.copy_avi_cert_locally]
+  provisioner "local-exec" {
+    command = "mv vcenter_finger_print.txt ../mgmt_cluster_template/ ; mv avi.cert ../mgmt_cluster_template/"
+  }
+}

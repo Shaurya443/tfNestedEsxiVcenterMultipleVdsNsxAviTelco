@@ -691,6 +691,7 @@
         "avi_management_cluster_service_engine_group": "Default-Group",
         "avi_service_engine_group": "Default-Group",
         "cluster_cidr": "100.96.0.0/11",
+        "public_key_path": "~/.ssh/cloudKey.pub",
         "service_cidr": "100.64.0.0/13",
         "avi_username": "tkg",
         "vsphere_network": "my-segment-tkg-1",

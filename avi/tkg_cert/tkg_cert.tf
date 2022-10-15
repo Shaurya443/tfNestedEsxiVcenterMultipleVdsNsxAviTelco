@@ -25,11 +25,11 @@ resource "null_resource" "generate_avi_cert" {
       "mkdir ssl_avi",
       "mv v3.ext ssl_avi/",
       "cd ssl_avi",
-      "openssl genrsa -out ca.key 4096",
-      "openssl req -x509 -new -nodes -sha512 -days 3650 -subj \"/C=US/ST=CA/L=Palo Alto/O=VMWARE/OU=IT/CN=controller-avi.${var.dns.domain}\" -key ca.key -out ca.crt",
-      "openssl genrsa -out ${var.avi.controller.ssl_key_name} 4096",
+      "openssl genrsa -out ca.key 2048",
+      "openssl req -x509 -new -nodes -sha512 -days 365 -subj \"/C=US/ST=CA/L=Palo Alto/O=VMWARE/OU=IT/CN=controller-avi.${var.dns.domain}\" -key ca.key -out ca.crt",
+      "openssl genrsa -out ${var.avi.controller.ssl_key_name} 2048",
       "openssl req -sha512 -new -subj \"/C=US/ST=CA/L=Palo Alto/O=VMWARE/OU=IT/CN=controller-avi.${var.dns.domain}\" -key avi.key -out avi.csr",
-      "openssl x509 -req -sha512 -days 3650 -extfile v3.ext -CA ca.crt -CAkey ca.key -CAcreateserial -in avi.csr -out ${var.avi.controller.ssl_cert_name}"
+      "openssl x509 -req -sha512 -days 365 -extfile v3.ext -CA ca.crt -CAkey ca.key -CAcreateserial -in avi.csr -out ${var.avi.controller.ssl_cert_name}"
     ]
   }
 }
