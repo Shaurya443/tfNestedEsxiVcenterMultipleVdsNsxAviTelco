@@ -1,4 +1,4 @@
-resource "null_resource" "prep_tkg_transfer" {
+resource "null_resource" "tkg_transfer" {
 
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
@@ -15,12 +15,23 @@ resource "null_resource" "prep_tkg_transfer" {
 
   provisioner "file" {
     source      = var.tkg.k8s_bin_location
-    destination = basename(var.tkg.tanzu_bin_location)
+    destination = basename(var.tkg.k8s_bin_location)
   }
 
   provisioner "file" {
     source      = var.tkg.ova_location
     destination = basename(var.tkg.ova_location)
+  }
+}
+
+resource "null_resource" "tkg_install" {
+  depends_on = [null_resource.tkg_transfer]
+  connection {
+    host        = var.vcenter.dvs.portgroup.management.external_gw_ip
+    type        = "ssh"
+    agent       = false
+    user        = var.external_gw.username
+    private_key = file(var.external_gw.private_key_path)
   }
 
   provisioner "remote-exec" {
@@ -50,8 +61,8 @@ resource "null_resource" "prep_tkg_transfer" {
   }
 }
 
-resource "null_resource" "prep_tkg_docker_install" {
-
+resource "null_resource" "install_docker" {
+  depends_on = [null_resource.tkg_install]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
@@ -77,8 +88,8 @@ resource "null_resource" "prep_tkg_docker_install" {
   }
 }
 
-resource "null_resource" "prep_tkg_kind_install" {
-  depends_on = [null_resource.prep_tkg_docker_install]
+resource "null_resource" "kind_install" {
+  depends_on = [null_resource.install_docker]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
@@ -97,7 +108,7 @@ resource "null_resource" "prep_tkg_kind_install" {
 }
 
 resource "null_resource" "govc_install" {
-
+  depends_on = [null_resource.kind_install]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
@@ -114,7 +125,7 @@ resource "null_resource" "govc_install" {
 }
 
 resource "null_resource" "jq_install" {
-  depends_on = [null_resource.prep_tkg_kind_install]
+  depends_on = [null_resource.govc_install]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
@@ -143,7 +154,7 @@ data "template_file" "govc_bash_script" {
 }
 
 resource "null_resource" "govc_run" {
-  depends_on = [null_resource.govc_install, null_resource.prep_tkg_transfer]
+  depends_on = [null_resource.govc_install]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
