@@ -552,7 +552,7 @@
       ],
       "ipam": {
         "networks": [
-          "my-segment-mgmt", "my-segment-vip-1", "my-segment-vip-2"
+          "my-segment-vip-1", "my-segment-vip-2"
         ]
       },
       "cloud": {
