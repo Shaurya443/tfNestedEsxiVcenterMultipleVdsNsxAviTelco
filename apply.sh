@@ -20,10 +20,10 @@ IFS=$'\n'
 #
 # Sanity checks
 #
-# check if the TKG binaries and ova files are present
-echo "Checking TKG/Tanzu variables.json parameters..."
+# check TKG Parameters
+## check TKG OVA
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
-  echo "==> Checking Tanzu Binaries and OVA..."
+  echo "==> Checking TKG Settings..."
   if [ -f $(jq -c -r .tkg.tanzu_bin_location $jsonFile) ]; then
     echo "   +++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile): OK."
   else
@@ -42,6 +42,34 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
     echo "   +++ERROR+++ $(jq -c -r .tkg.ova_location) file not found!!"
     exit 255
   fi
+## check TKG networks
+  tkg_mgmt_network=0
+  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+  do
+    if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) ]] ; then
+      tkg_mgmt_network=1
+      echo "   +++ TKG mgmt segment found: $(echo $segment | jq -r .display_name), OK"
+    fi
+  done
+  if [[ $tkg_mgmt_network -eq 0 ]] ; then
+    echo "   +++ERROR+++ $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) segment not found!!"
+    exit 255
+  fi
+  for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
+  do
+    tkg_workload_network=0
+    for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+    do
+      if [[ $(echo $segment | jq -r .display_name) == $(echo $cluster | jq -c -r .vsphere_network) ]] ; then
+        tkg_workload_network=1
+        echo "   +++ TKG workload segment found: $(echo $segment | jq -r .display_name), OK"
+      fi
+    done
+    if [[ $tkg_workload_network -eq 0 ]] ; then
+      echo "   +++ERROR+++ $(echo $cluster | jq -c -r .vsphere_network) segment not found!!"
+      exit 255
+    fi
+  done
 fi
 # check Avi Parameters
 ## check Avi OVA
@@ -53,18 +81,37 @@ if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .
     echo "   +++ERROR+++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
     exit 255
   fi
-## check Avi Network
+## check Avi Controller Network
   avi_controller_network=0
   for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
   do
     if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
       avi_controller_network=1
-      echo "   +++ Avi Controller IP is $(echo $segment | jq -r .avi_controller)"
+      echo "   +++ Avi Controller segment found: $(echo $segment | jq -r .display_name), OK"
+      echo "   +++ Avi Controller CIDR is: $(echo $segment | jq -r .cidr), OK"
+      echo "   +++ Avi Controller IP is: $(echo $segment | jq -r .avi_controller), OK"
     fi
   done
   if [[ $avi_controller_network -eq 0 ]] ; then
     echo "   +++ERROR+++ $(jq -c -r .avi.controller.network_ref $jsonFile) segment not found!!"
+    exit 255
   fi
+## check Avi Cloud Networks against NSX segments
+  for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
+  do
+    avi_cloud_network=0
+    for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+    do
+      if [[ $(echo $segment | jq -r .display_name) == $(echo $network | jq -c -r .name) ]] ; then
+        avi_cloud_network=1
+        echo "   +++ Avi cloud network found: $(echo $segment | jq -r .display_name), OK"
+      fi
+    done
+    if [[ $avi_cloud_network -eq 0 ]] ; then
+      echo "   +++ERROR+++ $(echo $network | jq -c -r .name) segment not found!!"
+      exit 255
+    fi
+  done
 fi
 # check if NSX file is present
 if [[ $(jq -c -r .nsx.manager.create $jsonFile) == true ]] || [[ $(jq -c -r .nsx.content_library.create $jsonFile) == true ]] ; then
