@@ -1,16 +1,3 @@
-#resource "null_resource" "ansible_hosts_avi_header_1" {
-#  provisioner "local-exec" {
-#    command = "echo '---' | tee hosts_avi; echo 'all:' | tee -a hosts_avi ; echo '  children:' | tee -a hosts_avi; echo '    controller:' | tee -a hosts_avi; echo '      hosts:' | tee -a hosts_avi"
-#  }
-#}
-#
-#resource "null_resource" "ansible_hosts_avi_controllers" {
-#  depends_on = [null_resource.ansible_hosts_avi_header_1]
-#  provisioner "local-exec" {
-#    command = "echo '        ${cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[0].avi_controller)}:' | tee -a hosts_avi "
-#  }
-#}
-
 resource "null_resource" "copy_avi_cert_locally" {
   provisioner "local-exec" {
     command = "scp -i ${var.external_gw.private_key_path} -o StrictHostKeyChecking=no ${var.external_gw.username}@${var.vcenter.dvs.portgroup.management.external_gw_ip}:/home/${var.external_gw.username}/ssl_avi/avi.cert ${path.root}/avi.cert"
@@ -26,7 +13,7 @@ resource "null_resource" "copy_avi_key_locally" {
 data "template_file" "avi_values" {
   template = file("templates/avi_vcenter_yaml_values.yml.template")
   vars = {
-    controllerPrivateIp = jsonencode(cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[0].avi_controller))
+    controllerPrivateIp = jsonencode(cidrhost(var.avi.controller.cidr, var.avi.controller.ip))
     ntp = jsonencode(var.dns.nameserver)
     dns = jsonencode(var.dns.nameserver)
     avi_old_password =  jsonencode(var.avi_old_password)

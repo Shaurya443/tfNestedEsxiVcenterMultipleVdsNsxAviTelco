@@ -42,15 +42,28 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
     exit 255
   fi
 fi
-# check if Avi file is present
+# check Avi Parameters
+## check Avi OVA
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
-  echo "==> Checking Avi OVA..."
-    if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
-      echo "   +++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
-    else
-      echo "   +++ERROR+++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
-      exit 255
+  echo "==> Checking Avi Settings..."
+  if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
+    echo "   +++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
+  else
+    echo "   +++ERROR+++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
+    exit 255
+  fi
+## check Avi Network
+  avi_controller_network=0
+  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+  do
+    if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
+      avi_controller_network=1
+      echo "   +++ Avi Controller IP is $(echo $segment | jq -r .avi_controller)"
     fi
+  done
+  if [[ $avi_controller_network -eq 0 ]] ; then
+    echo "   +++ERROR+++ $(jq -c -r .avi.controller.network_ref $jsonFile) segment not found!!"
+  fi
 fi
 # check if NSX file is present
 if [[ $(jq -c -r .nsx.manager.create $jsonFile) == true ]] || [[ $(jq -c -r .nsx.content_library.create $jsonFile) == true ]] ; then
@@ -211,137 +224,129 @@ fi
 # Build of the Nested Avi Controllers
 #
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
-  #
-  # Add Routes to join overlay network
-  #
-#  for route in $(jq -c -r .external_gw.routes[] $jsonFile)
-#  do
-#    sudo ip route add $(echo $route | jq -c -r '.to') via $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile)
-#  done
-  tf_init_apply "Build of Nested Avi Controllers - This should take around 15 minutes" avi/controllers ../../logs/tf_avi_controller.stdout ../../logs/tf_avi_controller.errors ../../$jsonFile
-  tf_init_apply "Build of Avi Cert for TKG - This should take less than a minute" avi/tkg_cert ../../logs/tf_avi_tkg_cert.stdout ../../logs/tf_avi_tkg_cert.errors ../../$jsonFile
-  #
-  # Remove Routes to join overlay network
-  #
-#  for route in $(jq -c -r .external_gw.routes[] $jsonFile)
-#  do
-#    sudo ip route del $(echo $route | jq -c -r '.to') via $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile)
-#  done
+  rm avi.json
+  IFS=$'\n'
+  avi_json=""
+  avi_networks="[]"
+  # copy cidr from nsx.config.segments_overlay to avi.config.cloud.networks (useful for vCenter cloud as we can't retrieve the CIDR through API)
+  for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
+  do
+    network_name=$(echo $network | jq -c -r .name)
+    for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+    do
+      if [[ $(echo $segment | jq -r .display_name) == $(echo $network_name) ]] ; then
+        cidr=$(echo $segment | jq -r .cidr)
+      fi
+    done
+    new_network=$(echo $network | jq '. += {"cidr": "'$(echo $cidr)'"}')
+    avi_networks=$(echo $avi_networks | jq '. += ['$(echo $new_network)']')
+  done
+  avi_json=$(jq -c -r . $jsonFile | jq '. | del (.avi.config.cloud.networks)')
+  avi_json=$(echo $avi_json | jq '.avi.config.cloud += {"networks": '$(echo $avi_networks)'}')
+  # copy cidr from avi.config.cloud.networks to avi.config.virtual_services.http
+  if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.http | length') -gt 0 ]] ; then
+    avi_http_vs=[]
+    for vs in $(echo $avi_json | jq -c -r .avi.config.virtual_services.http[])
+    do
+      for network in $(echo $avi_json | jq -c -r .avi.config.cloud.networks[])
+      do
+        if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+          cidr=$(echo $network | jq -r .cidr)
+        fi
+        if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+          type=$(echo $network | jq -r .type)
+        fi
+      done
+      new_vs_http=$(echo $vs | jq '. += {"cidr": "'$(echo $cidr)'", "type": "'$(echo $type)'"}')
+      avi_http_vs=$(echo $avi_dns_vs | jq '. += ['$(echo $new_vs_http)']')
+    done
+  fi
+  # copy cidr from avi.config.cloud.networks to avi.config.virtual_services.dns
+  if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.dns | length') -gt 0 ]] ; then
+    avi_dns_vs=[]
+    for vs in $(echo $avi_json | jq -c -r .avi.config.virtual_services.dns[])
+    do
+      for network in $(echo $avi_json | jq -c -r .avi.config.cloud.networks[])
+      do
+        if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+          cidr=$(echo $network | jq -r .cidr)
+        fi
+        if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
+          type=$(echo $network | jq -r .type)
+        fi
+      done
+      new_vs_dns=$(echo $vs | jq '. += {"cidr": "'$(echo $cidr)'", "type": "'$(echo $type)'"}')
+      avi_dns_vs=$(echo $avi_dns_vs | jq '. += ['$(echo $new_vs_dns)']')
+    done
+  fi
+  avi_json=$(echo $avi_json | jq '. | del (.avi.config.virtual_services.dns)')
+  avi_json=$(echo $avi_json | jq '.avi.config.virtual_services += {"dns": '$(echo $avi_dns_vs)'}')
+  # copying segment info (ip, cidr, and gw keys) to avi.controller
+  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+  do
+    if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
+      avi_json=$(echo $avi_json | jq '.avi.controller += {"ip": '$(echo $segment | jq .avi_controller)'}' | jq '.avi.controller += {"cidr": '$(echo $segment | jq .cidr)'}' | jq '.avi.controller += {"gw": '$(echo $segment | jq .gw)'}')
+    fi
+  done
+  echo $avi_json | jq . | tee avi.json > /dev/null
+  tf_init_apply "Build of Nested Avi Controllers - This should take around 15 minutes" avi/controllers ../../logs/tf_avi_controller.stdout ../../logs/tf_avi_controller.errors ../../avi.json
+  tf_init_apply "Build of Avi Cert for TKG - This should take less than a minute" avi/tkg_cert ../../logs/tf_avi_tkg_cert.stdout ../../logs/tf_avi_tkg_cert.errors ../../avi.json
 fi
 #
 # Build of the Nested Avi App
 #
 if [[ $(jq -c -r .avi.app.create $jsonFile) == true ]] ; then
-  #
-  # Add Routes to join overlay network
-  #
-#  for route in $(jq -c -r .external_gw.routes[] $jsonFile)
-#  do
-#    sudo ip route add $(echo $route | jq -c -r '.to') via $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile)
-#  done
   tf_init_apply "Build of Nested Avi App - This should take less than 10 minutes" avi/app ../../logs/tf_avi_app.stdout ../../logs/tfavi_app.errors ../../$jsonFile
-  #
-  # Remove Routes to join overlay network
-  #
-#  for route in $(jq -c -r .external_gw.routes[] $jsonFile)
-#  do
-#    sudo ip route del $(echo $route | jq -c -r '.to') via $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile)
-#  done
 fi
 #
 # Build of the config of Avi
-#
-rm avi.json
-IFS=$'\n'
-avi_json=""
-avi_networks="[]"
-# copy cidr from nsx.config.segments_overlay to avi.config.cloud.networks (useful for vCenter cloud as we can't retrieve the CIDR through API)
-for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
-do
-  network_name=$(echo $network | jq -c -r .name)
-  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
-  do
-    if [[ $(echo $segment | jq -r .display_name) == $(echo $network_name) ]] ; then
-      cidr=$(echo $segment | jq -r .cidr)
-    fi
-  done
-  new_network=$(echo $network | jq '. += {"cidr": "'$(echo $cidr)'"}')
-  avi_networks=$(echo $avi_networks | jq '. += ['$(echo $new_network)']')
-done
-avi_json=$(jq -c -r . $jsonFile | jq '. | del (.avi.config.cloud.networks)')
-avi_json=$(echo $avi_json | jq '.avi.config.cloud += {"networks": '$(echo $avi_networks)'}')
-# copy cidr from avi.config.cloud.networks to avi.config.virtual_services.http
-if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.http | length') -gt 0 ]] ; then
-  avi_http_vs=[]
-  for vs in $(echo $avi_json | jq -c -r .avi.config.virtual_services.http[])
-  do
-    for network in $(echo $avi_json | jq -c -r .avi.config.cloud.networks[])
-    do
-      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
-        cidr=$(echo $network | jq -r .cidr)
-      fi
-      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
-        type=$(echo $network | jq -r .type)
-      fi
-    done
-    new_vs_http=$(echo $vs | jq '. += {"cidr": "'$(echo $cidr)'", "type": "'$(echo $type)'"}')
-    avi_http_vs=$(echo $avi_dns_vs | jq '. += ['$(echo $new_vs_http)']')
-  done
-fi
-# copy cidr from avi.config.cloud.networks to avi.config.virtual_services.dns
-if [[ $(echo $avi_json | jq -c -r '.avi.config.virtual_services.dns | length') -gt 0 ]] ; then
-  avi_dns_vs=[]
-  for vs in $(echo $avi_json | jq -c -r .avi.config.virtual_services.dns[])
-  do
-    for network in $(echo $avi_json | jq -c -r .avi.config.cloud.networks[])
-    do
-      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
-        cidr=$(echo $network | jq -r .cidr)
-      fi
-      if [[ $(echo $network | jq -c -r .name) == $(echo $vs | jq -c -r '.network_ref') ]] ; then
-        type=$(echo $network | jq -r .type)
-      fi
-    done
-    new_vs_dns=$(echo $vs | jq '. += {"cidr": "'$(echo $cidr)'", "type": "'$(echo $type)'"}')
-    avi_dns_vs=$(echo $avi_dns_vs | jq '. += ['$(echo $new_vs_dns)']')
-  done
-fi
-avi_json=$(echo $avi_json | jq '. | del (.avi.config.virtual_services.dns)')
-avi_json=$(echo $avi_json | jq '.avi.config.virtual_services += {"dns": '$(echo $avi_dns_vs)'}')
-echo $avi_json | jq . | tee avi.json > /dev/null
 #
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] && [[ $(jq -c -r .avi.config.create $jsonFile) == true ]] ; then
   tf_init_apply "Build of the config of Avi - This should take less than 20 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../avi.json
 fi
 #
+# Creation of TKG json file
+#
+# copy of the Avi IP and AVI CIDR
+rm tkg.json
+IFS=$'\n'
+tkg_json=$(jq -c -r . $jsonFile)
+for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+do
+  if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
+    tkg_json=$(echo $tkg_json | jq '.tkg += {"avi_cidr": '$(echo $segment | jq .cidr)'}' | jq '.tkg += {"avi_ip": '$(echo $segment | jq .avi_controller)'}')
+  fi
+done
+echo $tkg_json | jq . | tee tkg.json > /dev/null
+#
 # TKG prep
 #
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] && [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
-  tf_init_apply "Prep of TKG - This should take less than 20 minutes" tkg/prep ../../logs/tf_tkg_prep.stdout ../../logs/tf_tkg_prep.errors ../../$jsonFile
+  tf_init_apply "Prep of TKG - This should take less than 20 minutes" tkg/prep ../../logs/tf_tkg_prep.stdout ../../logs/tf_tkg_prep.errors ../../tkg.json
 fi
 #
 # Templating of TKG mgmt-cluster
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] ; then
-  tf_init_apply "Templating of TKG mgmt cluster - This should take less than one minute" tkg/mgmt_cluster_template ../../logs/tf_mgmt_cluster_template.stdout ../../logs/tf_mgmt_cluster_template.errors ../../$jsonFile
+  tf_init_apply "Templating of TKG mgmt cluster - This should take less than one minute" tkg/mgmt_cluster_template ../../logs/tf_mgmt_cluster_template.stdout ../../logs/tf_mgmt_cluster_template.errors ../../tkg.json
 fi
 #
 # Build of TKG mgmt-cluster
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_build $jsonFile) == true ]] ; then
-  tf_init_apply "Templating of TKG mgmt cluster - This should take less than 15 minutes" tkg/mgmt_cluster_build ../../logs/tf_mgmt_cluster_build.stdout ../../logs/tf_mgmt_cluster_build.errors ../../$jsonFile
+  tf_init_apply "Templating of TKG mgmt cluster - This should take less than 15 minutes" tkg/mgmt_cluster_build ../../logs/tf_mgmt_cluster_build.stdout ../../logs/tf_mgmt_cluster_build.errors ../../tkg.json
 fi
 #
 # Templating of TKG workload-clusters
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] ; then
-  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than one minute" tkg/workload_clusters_templates ../../logs/tf_workload_clusters_templates.stdout ../../logs/tf_workload_clusters_templates.errors ../../$jsonFile
+  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than one minute" tkg/workload_clusters_templates ../../logs/tf_workload_clusters_templates.stdout ../../logs/tf_workload_clusters_templates.errors ../../tkg.json
 fi
 #
 # Build of TKG workload-clusters
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_build $jsonFile) == true ]] ; then
-  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than 15 minutes" tkg/workload_clusters_builds ../../logs/tf_workload_clusters_builds.stdout ../../logs/tf_workload_clusters_builds.errors ../../$jsonFile
+  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than 15 minutes" tkg/workload_clusters_builds ../../logs/tf_workload_clusters_builds.stdout ../../logs/tf_workload_clusters_builds.errors ../../tkg.json
 fi
 #
 #
@@ -353,4 +358,4 @@ echo "vCenter url: https://$(jq -c -r .vcenter.name $jsonFile).$(jq -c -r .dns.d
 echo "NSX url: https://$(jq -c -r .nsx.manager.basename $jsonFile).$(jq -c -r .dns.domain $jsonFile)"
 echo "To access Avi UI:"
 echo "  - configure $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile) as a socks proxy"
-echo "  - Avi url: https://$(jq -c -r .nsx.config.segments_overlay[0].cidr $jsonFile | cut -d'/' -f1 | cut -d'.' -f1-3).$(jq -c -r .nsx.config.segments_overlay[0].avi_controller $jsonFile)"
+echo "  - Avi url: https://$(jq -c -r .avi.controller.cidr avi.json | cut -d'/' -f1 | cut -d'.' -f1-3).$(jq -c -r .avi.controller.ip avi.json)"

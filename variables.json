@@ -484,7 +484,8 @@
       "basename": "avi-controller",
       "version": "21.1.4",
       "ssl_key_name": "avi.key",
-      "ssl_cert_name": "avi.cert"
+      "ssl_cert_name": "avi.cert",
+      "network_ref": "my-segment-mgmt"
     },
     "config": {
       "create": true,

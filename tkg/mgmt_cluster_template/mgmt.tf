@@ -13,7 +13,7 @@ data "template_file" "mgmt" {
   template = file("templates/mgmt_cluster.yml.template")
   vars = {
     avi_cloud_name = var.tkg.clusters.management.avi_cloud_name
-    avi_controller_ip = cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[0].avi_controller)
+    avi_controller_ip = cidrhost(var.tkg.avi_cidr, var.tkg.avi_ip)
     avi_control_plane_network = var.tkg.clusters.management.avi_control_plane_network
     avi_control_plane_network_cidr = local.avi_control_plane_network_cidr
     avi_data_network = var.tkg.clusters.management.avi_data_network

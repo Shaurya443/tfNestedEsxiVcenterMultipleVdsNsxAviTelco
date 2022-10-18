@@ -33,9 +33,9 @@ resource "vsphere_virtual_machine" "controller" {
 
   vapp {
     properties = {
-      "mgmt-ip"     = cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[count.index].avi_controller)
-      "mgmt-mask"   = cidrnetmask(var.nsx.config.segments_overlay[0].cidr)
-      "default-gw"  = cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[0].gw)
+      "mgmt-ip"     = cidrhost(var.avi.controller.cidr, var.nsx.config.segments_overlay[count.index].avi_controller)
+      "mgmt-mask"   = cidrnetmask(var.avi.controller.cidr)
+      "default-gw"  = cidrhost(var.avi.controller.cidr, var.avi.controller.gw)
    }
  }
 }
@@ -45,7 +45,7 @@ resource "null_resource" "wait_https_controller" {
   count = var.avi.controller.create == true ? 1 : 0
 
   provisioner "local-exec" {
-    command = "until $(curl --output /dev/null --silent --head -k https://${cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[count.index].avi_controller)}); do echo 'Waiting for Avi Controllers to be ready'; sleep 60 ; done"
+    command = "until $(curl --output /dev/null --silent --head -k https://${cidrhost(var.avi.controller.cidr, var.nsx.config.segments_overlay[count.index].avi_controller)}); do echo 'Waiting for Avi Controllers to be ready'; sleep 60 ; done"
   }
 }
 

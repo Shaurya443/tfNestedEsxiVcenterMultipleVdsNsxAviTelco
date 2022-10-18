@@ -2,7 +2,7 @@
 #data "template_file" "v3-ext" {
 #  template = file("templates/v3.ext.template")
 #  vars = {
-#    avi_controller_ip = cidrhost(var.nsx.config.segments_overlay[0].cidr, var.nsx.config.segments_overlay[0].avi_controller)
+#    avi_controller_ip = cidrhost(var.avi.controller.cidr, var.avi.controller.ip)
 #  }
 #}
 

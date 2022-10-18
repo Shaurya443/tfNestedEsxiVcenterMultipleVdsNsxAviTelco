@@ -23,7 +23,7 @@ data "vsphere_resource_pool" "resource_pool_nested" {
 
 data "vsphere_network" "vcenter_network_mgmt_nested" {
   count = 1
-  name = var.nsx.config.segments_overlay[0].display_name
+  name = var.avi.controller.network_ref
   datacenter_id = data.vsphere_datacenter.dc_nested[0].id
 }
 
