@@ -16,6 +16,7 @@ else
   echo "variables.json file not found!!"
   exit 255
 fi
+IFS=$'\n'
 #
 # Sanity checks
 #
@@ -77,7 +78,6 @@ if [[ $(jq -c -r .nsx.manager.create $jsonFile) == true ]] || [[ $(jq -c -r .nsx
 fi
 #
 # check if the amount of external IP is enough for all the interfaces of the tier0
-IFS=$'\n'
 ip_count_external_tier0=$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_ips | length' $jsonFile)
 tier0_ifaces=0
 for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
