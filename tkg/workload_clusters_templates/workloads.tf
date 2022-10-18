@@ -1,12 +1,4 @@
-resource "null_resource" "retrieve_vcenter_finger_print" {
-  provisioner "local-exec" {
-    command = "rm -f vcenter_finger_print.txt ; echo | openssl s_client -connect ${var.vcenter.name}.${var.dns.domain}:443 |& openssl x509 -fingerprint -noout |  cut -d\"=\" -f2 | tee vcenter_finger_print.txt"
-  }
-}
-
-
 data "template_file" "workload" {
-  depends_on = [null_resource.retrieve_vcenter_finger_print]
   count = length(var.tkg.clusters.workloads)
   template = file("templates/workload_clusters.yml.template")
   vars = {
@@ -59,13 +51,12 @@ resource "null_resource" "transfer_templates" {
   }
 
   provisioner "file" {
-    content = data.template_file.workload[count.index].rendered
+    content = data.template_file.govc_bash_script_workloads[count.index].rendered
     destination = "govc_workload${count.index + 1 }.sh"
   }
 
   provisioner "file" {
-    content = data.template_file.govc_bash_script_workloads[count.index].rendered
+    content = data.template_file.workload[count.index].rendered
     destination = "workload${count.index + 1 }.yml"
   }
-
 }

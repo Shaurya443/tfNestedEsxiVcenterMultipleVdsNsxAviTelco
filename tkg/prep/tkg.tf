@@ -190,6 +190,6 @@ resource "null_resource" "copy_avi_cert_locally" {
 resource "null_resource" "move_files" {
   depends_on = [null_resource.retrieve_vcenter_finger_print, null_resource.copy_avi_cert_locally]
   provisioner "local-exec" {
-    command = "mv vcenter_finger_print.txt ../mgmt_cluster_template/ ; mv avi.cert ../mgmt_cluster_template/"
+    command = "cp vcenter_finger_print.txt ../mgmt_cluster_template/ ; mv vcenter_finger_print.txt ../workload_clusters_templates/ ; mv avi.cert ../mgmt_cluster_template/"
   }
 }

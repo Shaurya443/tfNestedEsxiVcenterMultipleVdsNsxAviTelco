@@ -2,7 +2,7 @@ AVI_CONTROL_PLANE_HA_PROVIDER: ${avi_control_plane_ha_provider}
 ANTREA_NODEPORTLOCAL: ${antrea_node_port_local}
 ANTREA_NODEPORTLOCAL_ENABLED: ${antrea_node_port_local}
 CLUSTER_CIDR: ${cluster_cidr}
-CLUSTER_NAME: ${cluster_name}
+CLUSTER_NAME: ${name}
 CLUSTER_PLAN: dev
 ENABLE_AUDIT_LOGGING: "true"
 ENABLE_CEIP_PARTICIPATION: "false"

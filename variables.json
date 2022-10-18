@@ -72,15 +72,7 @@
     "ansible_core_version": "2.12.5",
     "ansible_version": "5.7.1",
     "avi_sdk_version": "21.1.4",
-    "netplanFile": "/etc/netplan/50-cloud-init.yaml",
-    "routes_description": "the following routes will be installed under the external interface",
-    "routes":
-    [
-      {
-        "to": "200.100.0.0/16",
-        "via": "172.16.100.111"
-      }
-    ]
+    "netplanFile": "/etc/netplan/50-cloud-init.yaml"
   },
   "esxi": {
     "count": 3,
@@ -556,7 +548,7 @@
         ]
       },
       "cloud": {
-        "name": "dc1_vCenter-nsx-tkg",
+        "name": "Default-Cloud",
         "networks": [
           {
             "name": "my-segment-mgmt",
@@ -668,16 +660,16 @@
   },
   "tkg": {
     "prep": true,
-    "description": "prep flag will enable the preparation of the external gateway with all the binaries and their associating installations, along with the upload of the OVA and folder/resource pool creation in vCenter",
+    "prep_description": "prep flag will enable the preparation of the external gateway with all the binaries and their associating installations, along with the upload of the OVA and folder/resource pool creation in vCenter",
     "tanzu_bin_location": "/home/ubuntu/bin/tanzu-cli-bundle-linux-amd64.tar.gz",
     "k8s_bin_location": "/home/ubuntu/bin/kubectl-linux-v1.23.8+vmware.2.gz",
     "ova_location": "/home/ubuntu/bin/ubuntu-2004-kube-v1.23.8+vmware.2-tkg.1-85a434f93857371fccb566a414462981.ova",
     "ova_network": "my-segment-mgmt",
     "ova_folder_template": "tkg-template",
     "clusters": {
-      "management_template": false,
+      "management_template": true,
       "management_template_description": "this flag will render the yml file in the external gw without building the mgmt cluster",
-      "management_build": false,
+      "management_build": true,
       "management_build_description": "this flag will render the yml file in the external gw and build the mgmt cluster",
       "management": {
         "name": "tkg-cluster-mgmt",
@@ -694,7 +686,7 @@
         "public_key_path": "~/.ssh/cloudKey.pub",
         "service_cidr": "100.64.0.0/13",
         "avi_username": "tkg",
-        "vsphere_network": "my-segment-tkg-1",
+        "vsphere_network": "my-segment-mgmt",
         "control_plane_disk": "20",
         "control_plane_memory": "4096",
         "control_plane_cpu": "2",
@@ -702,9 +694,9 @@
         "worker_memory": "4096",
         "worker_cpu": "2"
       },
-      "workload_template": false,
+      "workload_template": true,
       "workload_template_description": "this flag will render the yml file in the external gw without building the workload cluster(s)",
-      "workload_build": false,
+      "workload_build": true,
       "workload_build_description": "this flag will render the yml file in the external gw and build the workload cluster(s)",
       "workloads": [
         {
@@ -715,7 +707,7 @@
           "service_cidr": "100.64.0.0/13",
           "vcenter_folder": "tkg-cluster-workload-1",
           "vcenter_resource_pool": "tkg-cluster-workload-1",
-          "vsphere_network": "my-segment-tkg-2",
+          "vsphere_network": "my-segment-tkg-1",
           "public_key_path": "~/.ssh/cloudKey.pub",
           "worker_disk": "20",
           "worker_memory": "4096",
