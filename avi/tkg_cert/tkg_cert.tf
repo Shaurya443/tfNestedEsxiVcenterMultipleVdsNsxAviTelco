@@ -33,9 +33,20 @@ resource "null_resource" "generate_avi_cert" {
 #    ]
 #  }
 
+#  provisioner "file" {
+#    content = "ssl_avi"
+#    destination = "ssl_avi"
+#  }
+
+    provisioner "remote-exec" {
+      inline = [
+        "mkdir ssl_avi",
+      ]
+    }
+
   provisioner "file" {
-    content = 'ssl_avi'
-    destination = 'ssl_avi'
+    source = "ssl_avi/"
+    destination = "/home/ubuntu/ssl_avi/"
   }
 
 }

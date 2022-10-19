@@ -22,7 +22,7 @@ resource "null_resource" "tf_avi_controller" {
   }
 
   provisioner "file" {
-    source = "../../variables.json"
+    source = "../../avi.json"
     destination = "variables.json"
   }
 
