@@ -77,7 +77,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
   if [ -f $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) ]; then
     echo "   ++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile): OK."
   else
-    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.clusters.management.public_key_path) file not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) file not found!!"
     exit 255
   fi
   echo "   +++ Checking TKG SSH key(s) for the workload cluster(s)"
