@@ -154,7 +154,7 @@ data "template_file" "govc_bash_script" {
 }
 
 resource "null_resource" "govc_run" {
-  depends_on = [null_resource.govc_install]
+  depends_on = [null_resource.govc_install, null_resource.jq_install]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
