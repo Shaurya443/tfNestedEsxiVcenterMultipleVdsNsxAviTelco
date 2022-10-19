@@ -728,7 +728,7 @@
           "vcenter_folder": "tkg-cluster-workload-2",
           "vcenter_resource_pool": "tkg-cluster-workload-2",
           "vsphere_network": "my-segment-tkg-2",
-          "public_key_path": "~/.ssh/cloudKey.pub",
+          "public_key_path": "/home/ubuntu/.ssh/cloudKey.pub",
           "worker_disk": "20",
           "worker_memory": "4096",
           "worker_cpu": "2",
