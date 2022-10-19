@@ -75,28 +75,31 @@ fi
 ## check Avi OVA
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
   echo "==> Checking Avi Settings..."
+    echo "   +++ Checking Avi OVA"
   if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
-    echo "   +++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
+    echo "   ++++++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
   else
-    echo "   +++ERROR+++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
     exit 255
   fi
 ## check Avi Controller Network
+  echo "   +++ Checking Avi Controller network settings"
   avi_controller_network=0
   for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
   do
     if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
       avi_controller_network=1
-      echo "   +++ Avi Controller segment found: $(echo $segment | jq -r .display_name), OK"
-      echo "   +++ Avi Controller CIDR is: $(echo $segment | jq -r .cidr), OK"
-      echo "   +++ Avi Controller IP is: $(echo $segment | jq -r .avi_controller), OK"
+      echo "   ++++++ Avi Controller segment found: $(echo $segment | jq -r .display_name), OK"
+      echo "   ++++++ Avi Controller CIDR is: $(echo $segment | jq -r .cidr), OK"
+      echo "   ++++++ Avi Controller IP is: $(echo $segment | jq -r .avi_controller), OK"
     fi
   done
   if [[ $avi_controller_network -eq 0 ]] ; then
-    echo "   +++ERROR+++ $(jq -c -r .avi.controller.network_ref $jsonFile) segment not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .avi.controller.network_ref $jsonFile) segment not found!!"
     exit 255
   fi
 ## check Avi Cloud Networks against NSX segments
+  echo "   +++ Checking Avi Cloud networks settings"
   for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
   do
     avi_cloud_network=0
@@ -104,11 +107,28 @@ if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .
     do
       if [[ $(echo $segment | jq -r .display_name) == $(echo $network | jq -c -r .name) ]] ; then
         avi_cloud_network=1
-        echo "   +++ Avi cloud network found: $(echo $segment | jq -r .display_name), OK"
+        echo "   ++++++ Avi cloud network found: $(echo $segment | jq -r .display_name), OK"
       fi
     done
     if [[ $avi_cloud_network -eq 0 ]] ; then
-      echo "   +++ERROR+++ $(echo $network | jq -c -r .name) segment not found!!"
+      echo "   ++++++ERROR++++++ $(echo $network | jq -c -r .name) segment not found!!"
+      exit 255
+    fi
+  done
+## check Avi IPAM Networks against Avi Cloud Networks segments
+  echo "   +++ Checking Avi IPAM networks settings"
+  for network_ipam in $(jq -c -r .avi.config.ipam.networks[] $jsonFile)
+  do
+    avi_ipam_network=0
+    for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
+    do
+      if [[ $(echo $network_ipam) == $(echo $network | jq -c -r .name) ]] ; then
+        avi_ipam_network=1
+        echo "   ++++++ Avi IPAM network found: $(echo $network | jq -c -r .name), OK"
+      fi
+    done
+    if [[ $avi_ipam_network -eq 0 ]] ; then
+      echo "   ++++++ERROR++++++ $(echo $network_ipam) segment not found!!"
       exit 255
     fi
   done
