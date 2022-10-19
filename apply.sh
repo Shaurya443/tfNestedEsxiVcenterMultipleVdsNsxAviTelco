@@ -24,35 +24,37 @@ IFS=$'\n'
 ## check TKG OVA
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
   echo "==> Checking TKG Settings..."
+  echo "   +++ Checking TKG Binaries"
   if [ -f $(jq -c -r .tkg.tanzu_bin_location $jsonFile) ]; then
-    echo "   +++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile): OK."
+    echo "   ++++++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile): OK."
   else
-    echo "   +++ERROR+++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile) file not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile) file not found!!"
     exit 255
   fi
   if [ -f $(jq -c -r .tkg.k8s_bin_location $jsonFile) ]; then
-    echo "   +++ $(jq -c -r .tkg.k8s_bin_location $jsonFile): OK."
+    echo "   ++++++ $(jq -c -r .tkg.k8s_bin_location $jsonFile): OK."
   else
-    echo "   +++ERROR+++ $(jq -c -r .tkg.k8s_bin_location) file not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.k8s_bin_location) file not found!!"
     exit 255
   fi
   if [ -f $(jq -c -r .tkg.ova_location $jsonFile) ]; then
-    echo "   +++ $(jq -c -r .tkg.ova_location $jsonFile): OK."
+    echo "   ++++++ $(jq -c -r .tkg.ova_location $jsonFile): OK."
   else
-    echo "   +++ERROR+++ $(jq -c -r .tkg.ova_location) file not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.ova_location) file not found!!"
     exit 255
   fi
 ## check TKG networks
+  echo "   +++ Checking TKG network(s)"
   tkg_mgmt_network=0
   for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
   do
     if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) ]] ; then
       tkg_mgmt_network=1
-      echo "   +++ TKG mgmt segment found: $(echo $segment | jq -r .display_name), OK"
+      echo "   ++++++ TKG mgmt segment found: $(echo $segment | jq -r .display_name), OK"
     fi
   done
   if [[ $tkg_mgmt_network -eq 0 ]] ; then
-    echo "   +++ERROR+++ $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) segment not found!!"
+    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) segment not found!!"
     exit 255
   fi
   for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
@@ -62,20 +64,39 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
     do
       if [[ $(echo $segment | jq -r .display_name) == $(echo $cluster | jq -c -r .vsphere_network) ]] ; then
         tkg_workload_network=1
-        echo "   +++ TKG workload segment found: $(echo $segment | jq -r .display_name), OK"
+        echo "   ++++++ TKG workload segment found: $(echo $segment | jq -r .display_name), OK"
       fi
     done
     if [[ $tkg_workload_network -eq 0 ]] ; then
-      echo "   +++ERROR+++ $(echo $cluster | jq -c -r .vsphere_network) segment not found!!"
+      echo "   ++++++ERROR++++++ $(echo $cluster | jq -c -r .vsphere_network) segment not found!!"
+      exit 255
+    fi
+  done
+## check TKG SSH keys
+  echo "   +++ Checking TKG SSH key(s) for the mgmt cluster"
+  if [ -f $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) ]; then
+    echo "   ++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile): OK."
+  else
+    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.clusters.management.public_key_path) file not found!!"
+    exit 255
+  fi
+  echo "   +++ Checking TKG SSH key(s) for the workload cluster(s)"
+  for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
+  do
+    if [ -f $(echo $cluster | jq -c -r .public_key_path) ]; then
+      echo "   ++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path): OK."
+    else
+      echo "   ++++++ERROR++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path) file not found!!"
       exit 255
     fi
   done
 fi
+
 # check Avi Parameters
 ## check Avi OVA
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
   echo "==> Checking Avi Settings..."
-    echo "   +++ Checking Avi OVA"
+  echo "   +++ Checking Avi OVA"
   if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
     echo "   ++++++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
   else
