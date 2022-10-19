@@ -23,7 +23,7 @@ resource "null_resource" "tf_avi_controller" {
 
   provisioner "file" {
     source = "../../avi.json"
-    destination = "variables.json"
+    destination = "avi.json"
   }
 
   provisioner "file" {
@@ -43,9 +43,9 @@ resource "null_resource" "tf_avi_controller" {
       "sudo apt-get update && sudo apt-get install terraform",
       "cd tf_remote_avi_controller",
       "terraform init",
-      "terraform apply -auto-approve -var-file=../variables.json -var-file=../.environment_variables.json",
-      "rm -f ../.environment_variables.json",
-      "rm -f ../variables.json"
+      "terraform apply -auto-approve -var-file=../avi.json -var-file=../.environment_variables.json"
+#      "rm -f ../.environment_variables.json",
+#      "rm -f ../avi.json"
     ]
   }
 }
