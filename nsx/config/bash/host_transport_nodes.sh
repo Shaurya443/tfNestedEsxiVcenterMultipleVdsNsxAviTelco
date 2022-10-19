@@ -26,6 +26,17 @@ do
     compute_collection_external_id=$(echo $item | jq -r .external_id)
   fi
 done
+retry=12 ; pause=10 ; attempt=0
+while [[ $(curl -k -s -X GET -b cookies.txt -H "`grep X-XSRF-TOKEN headers.txt`" -H "Content-Type: application/json" https://$nsx_ip/policy/api/v1/infra/host-transport-node-profiles | jq -c -r '.results | length') -eq 0 ]]
+do
+  echo "waiting for transport node profile(s) to be retrieved"
+  sleep $pause
+  ((attempt++))
+  if [ $attempt -eq $retry ]; then
+    echo "FAILED to get transport node profile(s) to be retrieved after $retry retries - waiting $pause seconds between each retry"
+    exit 255
+  fi
+done
 transport_node_profiles=$(curl -k -s -X GET -b cookies.txt -H "`grep X-XSRF-TOKEN headers.txt`" -H "Content-Type: application/json" https://$nsx_ip/policy/api/v1/infra/host-transport-node-profiles)
 IFS=$'\n'
 for item in $(echo $transport_node_profiles | jq -c -r .results[])
