@@ -635,6 +635,11 @@
             ]
           }
         ]
+      },
+      "ako": {
+        "helm_url": "https://projects.registry.vmware.com/chartrepo/ako",
+        "version": "1.7.2",
+        "add_ako_repo": false
       }
     },
     "app": {
