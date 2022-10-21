@@ -67,6 +67,8 @@ write_files:
       run_cmd 'sudo apt-key add /tmp/signing.asc'
       run_cmd 'sudo apt-get update'
       run_cmd 'sudo apt-get install -y helm; ls /usr/bin/helm'
+      run_cmd 'sudo apt install -y jq'
+      run_cmd 'curl -L -o - "https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz" | sudo tar -C /usr/local/bin -xvzf - govc ; ls /usr/local/bin/govc'
       echo "cloud init done" | tee /tmp/cloudInitDone.log
     path: /opt/bootstrap.sh
     permissions: 0755

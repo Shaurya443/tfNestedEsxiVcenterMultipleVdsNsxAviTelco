@@ -107,40 +107,6 @@ resource "null_resource" "kind_install" {
   }
 }
 
-resource "null_resource" "govc_install" {
-  depends_on = [null_resource.kind_install]
-  connection {
-    host        = var.vcenter.dvs.portgroup.management.external_gw_ip
-    type        = "ssh"
-    agent       = false
-    user        = var.external_gw.username
-    private_key = file(var.external_gw.private_key_path)
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "curl -L -o - \"https://github.com/vmware/govmomi/releases/latest/download/govc_$(uname -s)_$(uname -m).tar.gz\" | sudo tar -C /usr/local/bin -xvzf - govc"
-    ]
-  }
-}
-
-resource "null_resource" "jq_install" {
-  depends_on = [null_resource.govc_install]
-  connection {
-    host        = var.vcenter.dvs.portgroup.management.external_gw_ip
-    type        = "ssh"
-    agent       = false
-    user        = var.external_gw.username
-    private_key = file(var.external_gw.private_key_path)
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt install -y jq"
-    ]
-  }
-}
-
 data "template_file" "govc_bash_script" {
   template = file("templates/govc.sh.template")
   vars = {
@@ -154,7 +120,7 @@ data "template_file" "govc_bash_script" {
 }
 
 resource "null_resource" "govc_run" {
-  depends_on = [null_resource.govc_install, null_resource.jq_install]
+  depends_on = [null_resource.tkg_install]
   connection {
     host        = var.vcenter.dvs.portgroup.management.external_gw_ip
     type        = "ssh"
