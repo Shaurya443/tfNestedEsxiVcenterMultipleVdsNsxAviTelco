@@ -28,7 +28,7 @@ else
   echo "   ++++++ERROR++++++ $(jq -c -r .nsx.content_library.ova_location $jsonFile) file not found!!"
   exit 255
 fi
-rm nsx.json
+rm -f nsx.json
 IFS=$'\n'
 nsx_json=""
 nsx_segments="[]"
