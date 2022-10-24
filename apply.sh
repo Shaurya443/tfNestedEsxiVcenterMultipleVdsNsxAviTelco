@@ -20,6 +20,31 @@ IFS=$'\n'
 #
 # Sanity checks
 #
+echo "==> Creqting External gateway routes..."
+rm -f external_gw.json
+new_routes="[]"
+external_gw_json=$(jq -c -r . $jsonFile | jq .)
+for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+do
+  for tier1 in $(jq -c -r .nsx.config.tier1s[] $jsonFile)
+  do
+    if [[ $(echo $segment | jq -c -r .tier1) == $(echo $tier1 | jq -c -r .display_name) ]] ; then
+      count=0
+      for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
+      do
+        if [[ $(echo $tier1 | jq -c -r .tier0) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
+          new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $segment | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile)'"}]')
+          echo "   +++ Route to '$(echo $segment | jq -c -r .cidr)' via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
+        fi
+        ((count++))
+      done
+    fi
+  done
+done
+external_gw_json=$(echo $external_gw_json | jq '.external_gw += {"routes": '$(echo $new_routes)'}')
+echo $external_gw_json | jq . | tee external_gw.json > /dev/null
+#
+#
 echo "==> Checking NSX Settings..."
 echo "   +++ Checking NSX OVA..."
 if [ -f $(jq -c -r .nsx.content_library.ova_location $jsonFile) ]; then
@@ -352,31 +377,6 @@ fi
 # Build of an external GW server on the underlay infrastructure
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
-  #
-  # the following will create a new json file with routes to be created toward the tier0 IP(s)
-  #
-  rm -f external_gw.json
-  new_routes="[]"
-  external_gw_json=$(jq -c -r . $jsonFile | jq .)
-  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
-  do
-    for tier1 in $(jq -c -r .nsx.config.tier1s[] $jsonFile)
-    do
-      if [[ $(echo $segment | jq -c -r .tier1) == $(echo $tier1 | jq -c -r .display_name) ]] ; then
-        count=0
-        for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
-        do
-          if [[ $(echo $tier1 | jq -c -r .tier0) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
-            new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $segment | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_ips["$count"] $jsonFile)'"}]')
-          fi
-          ((count++))
-        done
-      fi
-    done
-  done
-  external_gw_json=$(echo $external_gw_json | jq '.external_gw += {"routes": '$(echo $new_routes)'}')
-  echo $external_gw_json | jq . | tee external_gw.json > /dev/null
-  #
   tf_init_apply "Build of an external GW server on the underlay infrastructure - This should take less than 5 minutes" external_gw ../logs/tf_external_gw.stdout ../logs/tf_external_gw.errors ../external_gw.json
 fi
 #
