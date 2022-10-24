@@ -20,7 +20,7 @@ IFS=$'\n'
 #
 # Sanity checks
 #
-echo "==> Creqting External gateway routes..."
+echo "==> Creating External gateway routes..."
 rm -f external_gw.json
 new_routes="[]"
 external_gw_json=$(jq -c -r . $jsonFile | jq .)
@@ -34,7 +34,7 @@ do
       do
         if [[ $(echo $tier1 | jq -c -r .tier0) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
           new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $segment | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile)'"}]')
-          echo "   +++ Route to '$(echo $segment | jq -c -r .cidr)' via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
+          echo "   +++ Route to $(echo $segment | jq -c -r .cidr) via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
         fi
         ((count++))
       done

@@ -32,7 +32,7 @@ echo "--------------------------------------------------------------------------
 #
 # Destroy External GW server on the underlay infrastructure
 #
-echo "Destroy DNS/NTP server on the underlay infrastructure"
+echo "Destroy External Gateway on the underlay infrastructure"
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
   cd external_gw
   terraform destroy -auto-approve -var-file=../external_gw.json
