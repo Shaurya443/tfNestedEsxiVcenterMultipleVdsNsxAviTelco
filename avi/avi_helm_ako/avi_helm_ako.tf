@@ -12,5 +12,4 @@ resource "null_resource" "generate_avi_cert" {
         "helm repo add ako ${var.avi.config.ako.helm_url}",
       ]
     }
-
 }

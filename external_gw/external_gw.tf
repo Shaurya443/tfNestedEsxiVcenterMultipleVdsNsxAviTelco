@@ -28,7 +28,6 @@ data "template_file" "external_gw_userdata" {
     ip_vcenter = var.vcenter.dvs.portgroup.management.vcenter_ip
     vcenter_name = var.vcenter.name
     dns_domain = var.dns.domain
-//    ip_data_cidr  = "${var.vcenter.dvs.portgroup.nsx_external.external_gw_ip}/${var.vcenter.dvs.portgroup.nsx_external.prefix}"
     dns      = join(", ", var.external_gw.dns)
     netplanFile = var.external_gw.netplanFile
     privateKey = var.external_gw.private_key_path
@@ -178,7 +177,7 @@ resource "null_resource" "update_ip_external_gw_1" {
       "echo \"              addresses: [${join(", ", var.external_gw.dns)}]\" | sudo tee -a ${var.external_gw.netplanFile}",
       "echo \"        $ifaceSecond:\" | sudo tee -a ${var.external_gw.netplanFile}",
       "echo \"            dhcp4: false\" | sudo tee -a ${var.external_gw.netplanFile}",
-      "echo \"            addresses: [${var.vcenter.dvs.portgroup.nsx_external.external_gw_ip}/${var.vcenter.dvs.portgroup.nsx_external.prefix}]\" | sudo tee -a ${var.external_gw.netplanFile}",
+      "echo \"            addresses: [${var.vcenter.dvs.portgroup.nsx_external.external_gw_ip}/${split("/", var.vcenter.dvs.portgroup.nsx_external.cidr)[1]}]\" | sudo tee -a ${var.external_gw.netplanFile}",
       "echo \"            routes:\" | sudo tee -a ${var.external_gw.netplanFile}",
     ]
   }

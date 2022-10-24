@@ -57,7 +57,7 @@ do
   if [[ $(echo $tier0 | jq 'has("interfaces")') == "true" ]] ; then
     for interface in $(echo $tier0 | jq -c -r .interfaces[])
     do
-      new_json="{\"subnets\" : [ {\"ip_addresses\": [\"$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_ips['$ip_index']' $jsonFile)\"], \"prefix_len\" : $(jq -c -r '.vcenter.dvs.portgroup.nsx_external.prefix' $jsonFile)}]}"
+      new_json="{\"subnets\" : [ {\"ip_addresses\": [\"$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_ips['$ip_index']' $jsonFile)\"], \"prefix_len\" : $(jq -c -r '.vcenter.dvs.portgroup.nsx_external.cidr' $jsonFile |  cut -d"/" -f2)}]}"
       ip_index=$((ip_index+1))
       new_json=$(echo $new_json | jq .)
       new_json=$(echo $new_json | jq '. += {"display_name": "'$(echo $interface | jq -r .display_name)'"}')
@@ -121,7 +121,7 @@ do
       do
         interfaces=$(echo $interfaces | jq -c -r '. += ["/infra/tier-0s/'$(echo $tier0 | jq -r -c .display_name)'/locale-services/default/interfaces/'$interface'"]')
       done
-      new_json=$(echo $new_json | jq -c -r '.ha_vip_configs += [{"enabled": true, "vip_subnets": [{"ip_addresses": [ "'$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_vips['$ip_index']' $jsonFile)'" ], "prefix_len": '$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.prefix' $jsonFile)'}], "external_interface_paths": '$interfaces'}]')
+      new_json=$(echo $new_json | jq -c -r '.ha_vip_configs += [{"enabled": true, "vip_subnets": [{"ip_addresses": [ "'$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_vips['$ip_index']' $jsonFile)'" ], "prefix_len": '$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.cidr' $jsonFile |  cut -d"/" -f2)'}], "external_interface_paths": '$interfaces'}]')
       ip_index=$((ip_index+1))
     done
     echo "adding HA to the tier0 called $(echo $tier0 | jq -r -c .display_name)"
