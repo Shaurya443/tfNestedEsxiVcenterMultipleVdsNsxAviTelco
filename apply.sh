@@ -20,6 +20,7 @@ IFS=$'\n'
 #
 # Sanity checks
 #
+echo ""
 echo "==> Creating External gateway routes..."
 rm -f external_gw.json
 new_routes="[]"
@@ -45,6 +46,7 @@ external_gw_json=$(echo $external_gw_json | jq '.external_gw += {"routes": '$(ec
 echo $external_gw_json | jq . | tee external_gw.json > /dev/null
 #
 #
+echo ""
 echo "==> Checking NSX Settings..."
 echo "   +++ Checking NSX OVA..."
 if [ -f $(jq -c -r .nsx.content_library.ova_location $jsonFile) ]; then
@@ -130,6 +132,7 @@ rm -f avi.json
 IFS=$'\n'
 avi_json=""
 avi_networks="[]"
+echo ""
 echo "==> Checking Avi Settings..."
 echo "   +++ Checking Avi OVA"
 if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
@@ -255,6 +258,7 @@ done
 
 # check TKG Parameters
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
+  echo ""
   echo "==> Checking TKG Settings..."
   echo "   +++ Checking TKG Binaries"
   if [ -f $(jq -c -r .tkg.tanzu_bin_location $jsonFile) ]; then
@@ -324,8 +328,20 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       exit 255
     fi
   done
+  rm -f tkg.json
+  IFS=$'\n'
+  tkg_json=$(jq -c -r . $jsonFile)
+  echo "   +++ Copying Avi IP and Avi CIDR to tkg.json"
+  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
+  do
+    if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
+      tkg_json=$(echo $tkg_json | jq '.tkg += {"avi_cidr": '$(echo $segment | jq .cidr)'}' | jq '.tkg += {"avi_ip": '$(echo $segment | jq .avi_controller)'}')
+      echo "   ++++++ Adding key avi_cidr: $(echo $segment | jq .cidr) to tkg.json: OK"
+      echo "   ++++++ Adding key avi_ip: $(echo $segment | jq .avi_controller) to tkg.json: OK"
+    fi
+  done
+  echo $tkg_json | jq . | tee tkg.json > /dev/null
 fi
-
 
 tf_init_apply () {
   # $1 messsage to display
@@ -432,20 +448,6 @@ fi
 if [[ $(jq -c -r .avi.config.ako.add_ako_repo $jsonFile) == true ]] ; then
   tf_init_apply "Add AKO repo to helm - This should take less than a minute" avi/avi_helm_ako ../../logs/tf_avi_helm_ako.stdout ../../logs/tf_avi_helm_ako.errors ../../avi.json
 fi
-#
-# Creation of TKG json file
-#
-# copy of the Avi IP and AVI CIDR
-rm tkg.json
-IFS=$'\n'
-tkg_json=$(jq -c -r . $jsonFile)
-for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
-do
-  if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
-    tkg_json=$(echo $tkg_json | jq '.tkg += {"avi_cidr": '$(echo $segment | jq .cidr)'}' | jq '.tkg += {"avi_ip": '$(echo $segment | jq .avi_controller)'}')
-  fi
-done
-echo $tkg_json | jq . | tee tkg.json > /dev/null
 #
 # TKG prep
 #
