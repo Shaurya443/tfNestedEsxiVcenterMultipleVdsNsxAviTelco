@@ -185,26 +185,44 @@ resource "null_resource" "update_ip_external_gw_1" {
 
 
 
+resource "null_resource" "set_initial_state" {
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command = "echo \"0\" > current_state.txt"
+  }
+}
 
 
 resource "null_resource" "update_ip_external_gw_2" {
-  depends_on = [null_resource.update_ip_external_gw_1]
+  depends_on = [null_resource.update_ip_external_gw_1, null_resource.set_initial_state]
   count = var.external_gw.create == true ? length(var.external_gw.routes) : 0
 
-  connection {
-    host        = var.vcenter.dvs.portgroup.management.external_gw_ip
-    type        = "ssh"
-    agent       = false
-    user        = var.external_gw.username
-    private_key = file(var.external_gw.private_key_path)
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command = "while [[ $(cat current_state.txt) != \"${count.index}\" ]]; do echo \"${count.index} is waiting...\";sleep 5;done"
   }
 
   provisioner "remote-exec" {
+
+    connection {
+      host        = var.vcenter.dvs.portgroup.management.external_gw_ip
+      type        = "ssh"
+      agent       = false
+      user        = var.external_gw.username
+      private_key = file(var.external_gw.private_key_path)
+    }
+
     inline = [
       "echo \"            - to: ${var.external_gw.routes[count.index].to}\" | sudo tee -a ${var.external_gw.netplanFile}",
       "echo \"              via: ${var.external_gw.routes[count.index].via}\" | sudo tee -a ${var.external_gw.netplanFile}"
     ]
   }
+
+  provisioner "local-exec" {
+    interpreter = ["bash", "-c"]
+    command = "echo \"${count.index+1}\" > current_state.txt"
+  }
+  
 }
 
 
