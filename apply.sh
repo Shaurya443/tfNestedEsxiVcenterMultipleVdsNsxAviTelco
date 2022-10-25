@@ -21,6 +21,17 @@ IFS=$'\n'
 # Sanity checks
 #
 echo ""
+echo "==> Checking Ubuntu Settings for dns/ntp and external gw..."
+echo "   +++ Checking Ubuntu OVA..."
+if [ -f $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) ]; then
+  echo "   ++++++ $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile): OK."
+else
+  echo "   ++++++ERROR++++++ $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) file not found!!"
+  exit 255
+fi
+#
+#
+echo ""
 echo "==> Creating External gateway routes..."
 rm -f external_gw.json
 new_routes="[]"
@@ -44,6 +55,17 @@ do
 done
 external_gw_json=$(echo $external_gw_json | jq '.external_gw += {"routes": '$(echo $new_routes)'}')
 echo $external_gw_json | jq . | tee external_gw.json > /dev/null
+#
+#
+echo ""
+echo "==> Checking ESXi Settings..."
+echo "   +++ Checking ESXi ISO..."
+if [ -f $(jq -c -r .esxi.iso_source_location $jsonFile) ]; then
+  echo "   ++++++ $(jq -c -r .esxi.iso_source_location $jsonFile): OK."
+else
+  echo "   ++++++ERROR++++++ $(jq -c -r .esxi.iso_source_location $jsonFile) file not found!!"
+  exit 255
+fi
 #
 #
 echo ""
