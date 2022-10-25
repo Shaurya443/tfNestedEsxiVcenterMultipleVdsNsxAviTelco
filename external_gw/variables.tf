@@ -7,6 +7,8 @@ variable "vsphere_username" {}
 variable "vsphere_password" {}
 variable "ubuntu_password" {}
 variable "dns_ntp" {}
+variable "avi" {}
+
 
 
 

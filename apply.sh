@@ -439,12 +439,6 @@ if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] && [[ $(jq -c -r .
   tf_init_apply "Build of the config of Avi - This should take less than 20 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../avi.json
 fi
 #
-# Add AKO repo in helm
-#
-if [[ $(jq -c -r .avi.config.ako.add_ako_repo $jsonFile) == true ]] ; then
-  tf_init_apply "Add AKO repo to helm - This should take less than a minute" avi/avi_helm_ako ../../logs/tf_avi_helm_ako.stdout ../../logs/tf_avi_helm_ako.errors ../../avi.json
-fi
-#
 # TKG prep
 #
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] && [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
