@@ -510,16 +510,7 @@
       },
       "tenants": [
         {
-          "name": "tkg-cluster-workload-1",
-          "local": true,
-          "config_settings" : {
-            "tenant_vrf": false,
-            "se_in_provider_context": true,
-            "tenant_access_to_provider_se": true
-          }
-        },
-        {
-          "name": "tkg-cluster-workload-2",
+          "name": "tkg",
           "local": true,
           "config_settings" : {
             "tenant_vrf": false,
@@ -633,7 +624,9 @@
       "ako": {
         "helm_url": "https://projects.registry.vmware.com/chartrepo/ako",
         "version": "1.7.2",
-        "add_ako_repo": true
+        "add_ako_repo": true,
+        "tenant_ref": "tkg",
+        "service_engine_group_ref": "tkg"
       }
     },
     "app": {
