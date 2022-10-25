@@ -171,18 +171,14 @@ do
   do
     if [[ $(echo $segment | jq -r .display_name) == $(echo $network | jq -c -r .name) ]] ; then
       avi_cloud_network=1
-      echo "   ++++++ Avi cloud network found: $(echo $segment | jq -r .display_name), OK"
+      echo "   ++++++ Avi cloud network found in NSX overlay segments: $(echo $segment | jq -r .display_name), OK"
       cidr=$(echo $segment | jq -r .cidr)
     fi
   done
-  for segment in $(jq -c -r .nsx.config.segments[] nsx.json)
-  do
-    if [[ $(echo $segment | jq -r .name) == $(echo $network | jq -c -r .name) ]] ; then
-      avi_cloud_network=1
-      echo "   ++++++ Avi cloud network found: $(echo $segment | jq -r .name), OK"
-      cidr=$(echo $segment | jq -r .cidr)
-    fi
-  done
+  if [[ $(echo $(jq -c -r .vcenter.dvs.portgroup.nsx_external.name $jsonFile)-pg) == $(echo $network | jq -c -r .name) ]] ; then
+    avi_cloud_network=1
+    echo "   ++++++ Avi cloud network found in NSX external segment: $(echo $segment | jq -r .name), OK"
+  fi
   if [[ $avi_cloud_network -eq 0 ]] ; then
     echo "   ++++++ERROR++++++ $(echo $network | jq -c -r .name) segment not found!!"
     exit 255

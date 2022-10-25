@@ -340,7 +340,7 @@
       "tier0s":
       [
         {
-          "display_name": "tier0-0-oam-vrf",
+          "display_name": "tier0-oam-vrf",
           "ha_mode" : "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-01",
           "interfaces" :
@@ -377,7 +377,7 @@
           ]
         },
         {
-          "display_name": "tier0-1-signaling-vrf",
+          "display_name": "tier0-signaling-vrf",
           "ha_mode" : "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-02",
           "interfaces" :
@@ -417,14 +417,14 @@
       "tier1s":
       [
         {
-          "tier0": "tier0-0-oam-vrf",
-          "display_name": "tier1-oam",
+          "tier0": "tier0-oam-vrf",
+          "display_name": "tier1-mgmt",
           "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
           "dhcp_server": "dhcp-0"
         },
         {
-          "tier0": "tier0-1-signaling-vrf",
-          "display_name": "tier1-signaling",
+          "tier0": "tier0-signaling-vrf",
+          "display_name": "tier1-data",
           "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
           "dhcp_server": "dhcp-0"
         }
@@ -433,7 +433,7 @@
       [
         {
           "display_name": "my-segment-mgmt",
-          "tier1": "tier1-oam",
+          "tier1": "tier1-mgmt",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.11.0/24",
           "gw": "1",
@@ -442,8 +442,8 @@
           "description": "keep the management segment at the first position in the segment_overlay list - do not remove"
         },
         {
-          "display_name": "my-segment-tkg-1",
-          "tier1": "tier1-oam",
+          "display_name": "my-segment-tkg",
+          "tier1": "tier1-data",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.21.0/24",
           "gw": "1",
@@ -452,17 +452,8 @@
           "avi_app_server_ips": ["200.100.21.11", "200.100.21.12", "200.100.21.13"]
         },
         {
-          "display_name": "my-segment-tkg-2",
-          "tier1": "tier1-signaling",
-          "transport_zone": "tz_overlay",
-          "cidr": "200.100.22.0/24",
-          "gw": "1",
-          "dhcp_ranges": ["200.100.22.100-200.100.22.199"],
-          "description": "keep the segment server 2 at the third position in the segment_overlay list - do not remove"
-        },
-        {
-          "display_name": "my-segment-vip-1",
-          "tier1": "tier1-oam",
+          "display_name": "my-segment-vip-mgmt",
+          "tier1": "tier1-mgmt",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.31.0/24",
           "gw": "1",
@@ -470,8 +461,8 @@
           "description": "keep the vip segment 1 at the fourth position in the segment_overlay list - do not remove"
         },
         {
-          "display_name": "my-segment-vip-2",
-          "tier1": "tier1-signaling",
+          "display_name": "my-segment-vip-data",
+          "tier1": "tier1-data",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.32.0/24",
           "gw": "1",
@@ -555,7 +546,7 @@
       ],
       "ipam": {
         "networks": [
-          "my-segment-vip-1", "my-segment-vip-2", "segment-external"
+          "my-segment-vip-mgmt", "my-segment-vip-data", "segment-external"
         ]
       },
       "cloud": {
@@ -570,7 +561,7 @@
             "type": "V4"
           },
           {
-            "name": "my-segment-vip-1",
+            "name": "my-segment-vip-mgmt",
             "avi_ipam_pool": "200.100.31.210-200.100.31.230",
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
@@ -578,7 +569,7 @@
             "type": "V4"
           },
           {
-            "name": "my-segment-vip-2",
+            "name": "my-segment-vip-data",
             "avi_ipam_pool": "200.100.32.210-200.100.32.230",
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
@@ -586,7 +577,7 @@
             "type": "V4"
           },
           {
-            "name": "segment-external",
+            "name": "nsx-external-vds-pg",
             "avi_ipam_pool": "172.16.100.201-172.16.100.204",
             "dhcp_enabled": false,
             "exclude_discovered_subnets": true,
@@ -611,21 +602,7 @@
           }
         },
         {
-          "name": "tkg-1",
-          "ha_mode": "HA_MODE_SHARED",
-          "min_scaleout_per_vs": 2,
-          "buffer_se": 0,
-          "extra_shared_config_memory": 0,
-          "vcpus_per_se": 2,
-          "memory_per_se": 2048,
-          "disk_per_se": 25,
-          "realtime_se_metrics": {
-            "enabled": true,
-            "duration": 0
-          }
-        },
-        {
-          "name": "tkg-2",
+          "name": "tkg",
           "ha_mode": "HA_MODE_SHARED",
           "min_scaleout_per_vs": 2,
           "buffer_se": 0,
@@ -644,7 +621,7 @@
         "dns": [
           {
             "name": "app-dns",
-            "network_ref": "my-segment-vip-1",
+            "network_ref": "my-segment-vip-mgmt",
             "services": [
               {
                 "port": 53
@@ -656,7 +633,7 @@
       "ako": {
         "helm_url": "https://projects.registry.vmware.com/chartrepo/ako",
         "version": "1.7.2",
-        "add_ako_repo": false
+        "add_ako_repo": true
       }
     },
     "app": {
@@ -699,10 +676,10 @@
         "vcenter_folder": "tkg-cluster-mgmt",
         "vcenter_resource_pool": "tkg-cluster-mgmt",
         "avi_cloud_name": "Default-Cloud",
-        "avi_control_plane_network": "my-segment-vip-1",
-        "avi_data_network": "my-segment-vip-1",
-        "avi_mgmt_cluster_control_plane_vip_network_name": "my-segment-vip-1",
-        "avi_mgmt_cluster_vip_network_name": "my-segment-vip-1",
+        "avi_control_plane_network": "my-segment-vip-mgmt",
+        "avi_data_network": "my-segment-vip-mgmt",
+        "avi_mgmt_cluster_control_plane_vip_network_name": "my-segment-vip-mgmt",
+        "avi_mgmt_cluster_vip_network_name": "my-segment-vip-mgmt",
         "avi_management_cluster_service_engine_group": "Default-Group",
         "avi_service_engine_group": "Default-Group",
         "cluster_cidr": "100.96.0.0/11",
@@ -730,7 +707,7 @@
           "service_cidr": "100.64.0.0/13",
           "vcenter_folder": "tkg-cluster-workload-1",
           "vcenter_resource_pool": "tkg-cluster-workload-1",
-          "vsphere_network": "my-segment-tkg-1",
+          "vsphere_network": "my-segment-tkg",
           "public_key_path": "/home/ubuntu/.ssh/cloudKey.pub",
           "worker_disk": "20",
           "worker_memory": "4096",
@@ -749,7 +726,7 @@
           "service_cidr": "100.64.0.0/13",
           "vcenter_folder": "tkg-cluster-workload-2",
           "vcenter_resource_pool": "tkg-cluster-workload-2",
-          "vsphere_network": "my-segment-tkg-2",
+          "vsphere_network": "my-segment-tkg",
           "public_key_path": "/home/ubuntu/.ssh/cloudKey.pub",
           "worker_disk": "20",
           "worker_memory": "4096",
