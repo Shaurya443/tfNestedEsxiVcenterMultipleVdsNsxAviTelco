@@ -537,7 +537,7 @@
       ],
       "ipam": {
         "networks": [
-          "my-segment-vip-mgmt", "my-segment-vip-data", "segment-external"
+          "my-segment-vip-mgmt", "my-segment-vip-data", "segment-external-pg"
         ]
       },
       "cloud": {
