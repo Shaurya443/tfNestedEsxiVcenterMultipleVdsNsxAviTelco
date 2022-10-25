@@ -96,7 +96,7 @@ resource "null_resource" "clear_ssh_key_external_gw_locally" {
   }
 }
 
-resource "null_resource" "add_nic_to_gw_network_nsx_external" {
+resource "null_resource" "add_nic_network_nsx_external" {
   depends_on = [vsphere_virtual_machine.external_gw]
 
   provisioner "local-exec" {
@@ -112,8 +112,8 @@ resource "null_resource" "add_nic_to_gw_network_nsx_external" {
   }
 }
 
-resource "null_resource" "add_nic_to_gw_network_nsx_overlay" {
-  depends_on = [vsphere_virtual_machine.external_gw, null_resource.add_nic_to_gw_network_nsx_external]
+resource "null_resource" "add_nic_network_nsx_overlay" {
+  depends_on = [vsphere_virtual_machine.external_gw, null_resource.add_nic_network_nsx_external]
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -128,8 +128,8 @@ resource "null_resource" "add_nic_to_gw_network_nsx_overlay" {
   }
 }
 
-resource "null_resource" "add_nic_to_gw_network_nsx_overlay_edge" {
-  depends_on = [vsphere_virtual_machine.external_gw, null_resource.add_nic_to_gw_network_nsx_external, null_resource.add_nic_to_gw_network_nsx_overlay]
+resource "null_resource" "add_nic_network_nsx_overlay_edge" {
+  depends_on = [vsphere_virtual_machine.external_gw, null_resource.add_nic_network_nsx_external, null_resource.add_nic_network_nsx_overlay]
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -144,8 +144,8 @@ resource "null_resource" "add_nic_to_gw_network_nsx_overlay_edge" {
   }
 }
 
-resource "null_resource" "update_ip_external_gw_1" {
-  depends_on = [null_resource.add_nic_to_gw_network_nsx_external, null_resource.add_nic_to_gw_network_nsx_overlay, null_resource.add_nic_to_gw_network_nsx_overlay_edge]
+resource "null_resource" "adding_ip_to_nsx_external" {
+  depends_on = [null_resource.add_nic_network_nsx_external, null_resource.add_nic_network_nsx_overlay, null_resource.add_nic_network_nsx_overlay_edge]
   count = (var.external_gw.create == true ? 1 : 0)
 
   connection {
@@ -193,8 +193,8 @@ resource "null_resource" "set_initial_state" {
 }
 
 
-resource "null_resource" "update_ip_external_gw_2" {
-  depends_on = [null_resource.update_ip_external_gw_1, null_resource.set_initial_state]
+resource "null_resource" "adding_ip_routes_to_nsx_external" {
+  depends_on = [null_resource.adding_ip_to_nsx_external, null_resource.set_initial_state]
   count = var.external_gw.create == true ? length(var.external_gw.routes) : 0
 
   provisioner "local-exec" {
@@ -227,8 +227,8 @@ resource "null_resource" "update_ip_external_gw_2" {
 
 
 
-resource "null_resource" "update_ip_external_gw_3" {
-  depends_on = [null_resource.update_ip_external_gw_2]
+resource "null_resource" "adding_ip_to_nsx_overlay_and_nsx_overlay_edge" {
+  depends_on = [null_resource.adding_ip_routes_to_nsx_external]
   count = (var.external_gw.create == true ? 1 : 0)
 
   connection {
