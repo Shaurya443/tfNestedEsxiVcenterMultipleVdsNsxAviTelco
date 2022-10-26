@@ -200,6 +200,7 @@ do
   if [[ $(echo $(jq -c -r .vcenter.dvs.portgroup.nsx_external.name $jsonFile)-pg) == $(echo $network | jq -c -r .name) ]] ; then
     avi_cloud_network=1
     echo "   ++++++ Avi cloud network found in NSX external segment: $(echo $network | jq -c -r .name), OK"
+    cidr=$(jq -c -r .vcenter.dvs.portgroup.nsx_external.cidr $jsonFile)
   fi
   if [[ $avi_cloud_network -eq 0 ]] ; then
     echo "   ++++++ERROR++++++ $(echo $network | jq -c -r .name) segment not found!!"
