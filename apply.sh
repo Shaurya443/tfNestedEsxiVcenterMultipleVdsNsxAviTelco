@@ -18,17 +18,27 @@ else
 fi
 IFS=$'\n'
 #
+#
+#
+test_if_file_exists () {
+  # $1 file path to check
+  # $2 message to display
+  # $3 message to display if file is present
+  # $4 error to display
+  echo "$2"
+  if [ -f $1 ]; then
+    echo "$3$1: OK."
+  else
+    echo "$4$1: file not found!!"
+    exit 255
+  fi
+}
+#
 # Sanity checks
 #
 echo ""
 echo "==> Checking Ubuntu Settings for dns/ntp and external gw..."
-echo "   +++ Checking Ubuntu OVA..."
-if [ -f $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) ]; then
-  echo "   ++++++ $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile): OK."
-else
-  echo "   ++++++ERROR++++++ $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) file not found!!"
-  exit 255
-fi
+test_if_file_exists $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) "   +++ Checking Ubuntu OVA..." "   ++++++ " "   ++++++ERROR++++++ "
 #
 #
 echo ""
@@ -59,24 +69,12 @@ echo $external_gw_json | jq . | tee external_gw.json > /dev/null
 #
 echo ""
 echo "==> Checking ESXi Settings..."
-echo "   +++ Checking ESXi ISO..."
-if [ -f $(jq -c -r .esxi.iso_source_location $jsonFile) ]; then
-  echo "   ++++++ $(jq -c -r .esxi.iso_source_location $jsonFile): OK."
-else
-  echo "   ++++++ERROR++++++ $(jq -c -r .esxi.iso_source_location $jsonFile) file not found!!"
-  exit 255
-fi
+test_if_file_exists $(jq -c -r .esxi.iso_source_location $jsonFile) "   +++ Checking ESXi ISO..." "   ++++++ " "   ++++++ERROR++++++ "
 #
 #
 echo ""
 echo "==> Checking NSX Settings..."
-echo "   +++ Checking NSX OVA..."
-if [ -f $(jq -c -r .nsx.content_library.ova_location $jsonFile) ]; then
-  echo "   ++++++ $(jq -c -r .nsx.content_library.ova_location $jsonFile): OK."
-else
-  echo "   ++++++ERROR++++++ $(jq -c -r .nsx.content_library.ova_location $jsonFile) file not found!!"
-  exit 255
-fi
+test_if_file_exists $(jq -c -r .nsx.content_library.ova_location $jsonFile) "   +++ Checking NSX OVA..." "   ++++++ " "   ++++++ERROR++++++ "
 rm -f nsx.json
 IFS=$'\n'
 nsx_json=""
@@ -156,13 +154,7 @@ avi_json=""
 avi_networks="[]"
 echo ""
 echo "==> Checking Avi Settings..."
-echo "   +++ Checking Avi OVA"
-if [ -f $(jq -c -r .avi.content_library.ova_location $jsonFile) ]; then
-  echo "   ++++++ $(jq -c -r .avi.content_library.ova_location $jsonFile): OK."
-else
-  echo "   ++++++ERROR++++++ $(jq -c -r .avi.content_library.ova_location $jsonFile) file not found!!"
-  exit 255
-fi
+test_if_file_exists $(jq -c -r .avi.content_library.ova_location $jsonFile) "   +++ Checking Avi OVA" "   ++++++ " "   ++++++ERROR++++++ "
 # check Avi Controller Network
 # copying segment info (ip, cidr, and gw keys) to avi.controller
 echo "   +++ Checking Avi Controller network settings"
@@ -274,79 +266,102 @@ do
     exit 255
   fi
 done
-
+#
 # check TKG Parameters
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
   echo ""
   echo "==> Checking TKG Settings..."
-  echo "   +++ Checking TKG Binaries"
-  if [ -f $(jq -c -r .tkg.tanzu_bin_location $jsonFile) ]; then
-    echo "   ++++++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile): OK."
-  else
-    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.tanzu_bin_location $jsonFile) file not found!!"
-    exit 255
-  fi
-  if [ -f $(jq -c -r .tkg.k8s_bin_location $jsonFile) ]; then
-    echo "   ++++++ $(jq -c -r .tkg.k8s_bin_location $jsonFile): OK."
-  else
-    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.k8s_bin_location $jsonFile) file not found!!"
-    exit 255
-  fi
-  if [ -f $(jq -c -r .tkg.ova_location $jsonFile) ]; then
-    echo "   ++++++ $(jq -c -r .tkg.ova_location $jsonFile): OK."
-  else
-    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.ova_location $jsonFile) file not found!!"
-    exit 255
-  fi
-#
-#
-  echo "   +++ Checking TKG network(s)"
+  test_if_file_exists $(jq -c -r .tkg.tanzu_bin_location $jsonFile) "   +++ Checking TKG Binaries" "   ++++++ " "   ++++++ERROR++++++ "
+  test_if_file_exists $(jq -c -r .tkg.k8s_bin_location $jsonFile) "   +++ Checking K8s Binaries" "   ++++++ " "   ++++++ERROR++++++ "
+  test_if_file_exists $(jq -c -r .tkg.ova_location $jsonFile) "   +++ Checking TKG OVA" "   ++++++ " "   ++++++ERROR++++++ "
+  #
+  echo "   +++ Checking various settings for mgmt cluster"
   tkg_mgmt_network=0
+  echo "   ++++++ Checking TKG network(s) for mgmt cluster"
   for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
   do
     if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) ]] ; then
       tkg_mgmt_network=1
-      echo "   ++++++ TKG mgmt segment found: $(echo $segment | jq -r .display_name), OK"
+      echo "   +++++++++ TKG mgmt segment found: $(echo $segment | jq -r .display_name), OK"
     fi
   done
   if [[ $tkg_mgmt_network -eq 0 ]] ; then
-    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) segment not found!!"
+    echo "   +++++++++ERROR+++++++++ $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) segment not found!!"
     exit 255
   fi
+  #
+  echo "   ++++++ Checking TKG SSH key(s) for the mgmt cluster"
+  if [ -f $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) ]; then
+    echo "   +++++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile): OK."
+  else
+    echo "   +++++++++ERROR+++++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) file not found!!"
+    exit 255
+  fi
+  #
+  echo "   +++ Checking various settings for workload cluster(s)"
   for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
   do
+    echo "   ++++++ Checking TKG network(s) for workload cluster(s)"
     tkg_workload_network=0
     for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
     do
       if [[ $(echo $segment | jq -r .display_name) == $(echo $cluster | jq -c -r .vsphere_network) ]] ; then
         tkg_workload_network=1
-        echo "   ++++++ TKG workload segment found: $(echo $segment | jq -r .display_name), OK"
+        echo "   +++++++++ TKG workload segment found: $(echo $segment | jq -r .display_name), OK"
       fi
     done
     if [[ $tkg_workload_network -eq 0 ]] ; then
-      echo "   ++++++ERROR++++++ $(echo $cluster | jq -c -r .vsphere_network) segment not found!!"
+      echo "   +++++++++ERROR+++++++++ $(echo $cluster | jq -c -r .vsphere_network) segment not found!!"
       exit 255
     fi
-  done
-#
-#
-  echo "   +++ Checking TKG SSH key(s) for the mgmt cluster"
-  if [ -f $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) ]; then
-    echo "   ++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile): OK."
-  else
-    echo "   ++++++ERROR++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) file not found!!"
-    exit 255
-  fi
-  echo "   +++ Checking TKG SSH key(s) for the workload cluster(s)"
-  for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
-  do
+    #
+    echo "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)"
     if [ -f $(echo $cluster | jq -c -r .public_key_path) ]; then
-      echo "   ++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path): OK."
+      echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path): OK."
     else
-      echo "   ++++++ERROR++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path) file not found!!"
+      echo "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path) file not found!!"
       exit 255
     fi
+    #
+    if [[ $(jq -c -r .avi.config.ako.generate_values_yaml $jsonFile) == true ]] ; then
+      echo "   ++++++ Checking TKG Tenant Name for the workload cluster(s)"
+      if [[ $(echo $cluster | jq -c -r .ako_tenant_ref) == "admin" ]] ; then
+        echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), tenant name $(echo $cluster | jq -c -r .ako_tenant_ref): OK."
+        ako_tenant=1
+      else
+        for tenant in $(jq -c -r .avi.config.tenants[] $jsonFile)
+        do
+          if [[ $(echo $tenant | jq -c -r .name) == $(echo $cluster | jq -c -r .ako_tenant_ref) ]] ; then
+            ako_tenant=1
+            echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), tenant $(echo $cluster | jq -c -r .ako_tenant_ref): OK."
+          fi
+        done
+      fi
+      if [[ $ako_tenant -eq 0 ]] ; then
+        echo "   +++++++++ERROR+++++++++ $(echo $cluster | jq -c -r .ako_tenant_ref) tenant not found!!"
+        exit 255
+      fi
+      #
+      echo "   ++++++ Checking TKG Service Engine Group for the workload cluster(s)"
+      if [[ $(echo $cluster | jq -c -r .ako_service_engine_group_ref) == "Default-Group" ]] ; then
+        echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), Service Engine Group $(echo $cluster | jq -c -r .ako_service_engine_group_ref): OK."
+        ako_seg=1
+      else
+        for seg in $(jq -c -r .avi.config.service_engine_groups[] $jsonFile)
+        do
+          if [[ $(echo $seg | jq -c -r .name) == $(echo $cluster | jq -c -r .ako_service_engine_group_ref) ]] ; then
+            ako_seg=1
+            echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), Service Engine Group $(echo $cluster | jq -c -r .ako_service_engine_group_ref): OK."
+          fi
+        done
+      fi
+      if [[ $ako_seg -eq 0 ]] ; then
+        echo "   +++++++++ERROR+++++++++ $(echo $cluster | jq -c -r .ako_service_engine_group_ref) seg not found!!"
+        exit 255
+      fi
+    fi
   done
+  #
   rm -f tkg.json
   IFS=$'\n'
   tkg_json=$(jq -c -r . $jsonFile)
@@ -361,7 +376,9 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
   done
   echo $tkg_json | jq . | tee tkg.json > /dev/null
 fi
-
+#
+#
+#
 tf_init_apply () {
   # $1 messsage to display
   # $2 is the folder to init/apply tf
@@ -412,7 +429,7 @@ fi
 # Build of an external GW server on the underlay infrastructure
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
-  tf_init_apply "Build of an external GW server on the underlay infrastructure - This should take less than 5 minutes" external_gw ../logs/tf_external_gw.stdout ../logs/tf_external_gw.errors ../external_gw.json
+  tf_init_apply "Build of an external GW server on the underlay infrastructure - This should take less than 10 minutes" external_gw ../logs/tf_external_gw.stdout ../logs/tf_external_gw.errors ../external_gw.json
 fi
 #
 # Build of the nested ESXi/vCenter infrastructure
@@ -440,7 +457,7 @@ fi
 # Build of the config of NSX-T
 #
 if [[ $(jq -c -r .nsx.config.create $jsonFile) == true ]] ; then
-  tf_init_apply "Build of the config of NSX-T - This should take less than 60 minutes" nsx/config ../../logs/tf_nsx_config.stdout ../../logs/tf_nsx_config.errors ../../$jsonFile
+  tf_init_apply "Build of the config of NSX-T - This should take less than 75 minutes" nsx/config ../../logs/tf_nsx_config.stdout ../../logs/tf_nsx_config.errors ../../$jsonFile
 fi
 #
 # Build of the Nested Avi Controllers
@@ -459,13 +476,13 @@ fi
 # Build of the config of Avi
 #
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] && [[ $(jq -c -r .avi.config.create $jsonFile) == true ]] ; then
-  tf_init_apply "Build of the config of Avi - This should take less than 20 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../avi.json
+  tf_init_apply "Build of the config of Avi - This should take around 40 minutes" avi/config ../../logs/tf_avi_config.stdout ../../logs/tf_avi_config.errors ../../avi.json
 fi
 #
 # TKG prep
 #
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] && [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] ; then
-  tf_init_apply "Prep of TKG - This should take less than 20 minutes" tkg/prep ../../logs/tf_tkg_prep.stdout ../../logs/tf_tkg_prep.errors ../../tkg.json
+  tf_init_apply "Prep of TKG - This should take less than 15 minutes" tkg/prep ../../logs/tf_tkg_prep.stdout ../../logs/tf_tkg_prep.errors ../../tkg.json
 fi
 #
 # Templating of TKG mgmt-cluster
@@ -477,7 +494,7 @@ fi
 # Build of TKG mgmt-cluster
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_build $jsonFile) == true ]] ; then
-  tf_init_apply "Building TKG mgmt cluster - This should take less than 25 minutes" tkg/mgmt_cluster_build ../../logs/tf_mgmt_cluster_build.stdout ../../logs/tf_mgmt_cluster_build.errors ../../tkg.json
+  tf_init_apply "Building TKG mgmt cluster - This should take around 25 minutes" tkg/mgmt_cluster_build ../../logs/tf_mgmt_cluster_build.stdout ../../logs/tf_mgmt_cluster_build.errors ../../tkg.json
 fi
 #
 # Templating of TKG workload-clusters
@@ -489,7 +506,7 @@ fi
 # Build of TKG workload-clusters
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_build $jsonFile) == true ]] ; then
-  tf_init_apply "Building TKG workload cluster(s) - This should take less than 40 minutes - for 2 clusters" tkg/workload_clusters_builds ../../logs/tf_workload_clusters_builds.stdout ../../logs/tf_workload_clusters_builds.errors ../../tkg.json
+  tf_init_apply "Building TKG workload cluster(s) - This should take around 40 minutes - for 2 clusters" tkg/workload_clusters_builds ../../logs/tf_workload_clusters_builds.stdout ../../logs/tf_workload_clusters_builds.errors ../../tkg.json
 fi
 #
 #
@@ -502,3 +519,4 @@ echo "NSX url: https://$(jq -c -r .nsx.manager.basename $jsonFile).$(jq -c -r .d
 echo "To access Avi UI:"
 echo "  - configure $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile) as a socks proxy"
 echo "  - Avi url: https://$(jq -c -r .avi.controller.cidr avi.json | cut -d'/' -f1 | cut -d'.' -f1-3).$(jq -c -r .avi.controller.ip avi.json)"
+

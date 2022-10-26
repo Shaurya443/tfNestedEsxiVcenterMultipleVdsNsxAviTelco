@@ -623,10 +623,9 @@
       },
       "ako": {
         "helm_url": "https://projects.registry.vmware.com/chartrepo/ako",
-        "version": "1.7.2",
         "add_ako_repo": true,
-        "tenant_ref": "tkg",
-        "service_engine_group_ref": "tkg"
+        "generate_values_yaml": true,
+        "deploy_ako": false
       }
     },
     "app": {
@@ -709,7 +708,10 @@
           "control_plane_disk": "20",
           "control_plane_memory": "4096",
           "control_plane_cpu": "2",
-          "control_plane_count": "1"
+          "control_plane_count": "1",
+          "ako_version": "1.7.2",
+          "ako_tenant_ref": "tkg",
+          "ako_service_engine_group_ref": "tkg"
         },
         {
           "name": "tkg-cluster-workload-2",
@@ -728,7 +730,10 @@
           "control_plane_disk": "20",
           "control_plane_memory": "4096",
           "control_plane_cpu": "2",
-          "control_plane_count": "1"
+          "control_plane_count": "1",
+          "ako_version": "1.7.2",
+          "ako_tenant_ref": "tkg",
+          "ako_service_engine_group_ref": "tkg"
         }
       ]
     }
