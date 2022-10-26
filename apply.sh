@@ -290,13 +290,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
     exit 255
   fi
   #
-  echo "   ++++++ Checking TKG SSH key(s) for the mgmt cluster"
-  if [ -f $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) ]; then
-    echo "   +++++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile): OK."
-  else
-    echo "   +++++++++ERROR+++++++++ $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) file not found!!"
-    exit 255
-  fi
+  test_if_file_exists $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) "   ++++++ Checking TKG SSH key(s) for the mgmt cluster" "   +++++++++ " "   +++++++++ERROR+++++++++ "
   #
   echo "   +++ Checking various settings for workload cluster(s)"
   for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
@@ -315,13 +309,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       exit 255
     fi
     #
-    echo "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)"
-    if [ -f $(echo $cluster | jq -c -r .public_key_path) ]; then
-      echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path): OK."
-    else
-      echo "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file $(echo $cluster | jq -c -r .public_key_path) file not found!!"
-      exit 255
-    fi
+    test_if_file_exists $(echo $cluster | jq -c -r .public_key_path) "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)" "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file " "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file "
     #
     if [[ $(jq -c -r .avi.config.ako.generate_values_yaml $jsonFile) == true ]] ; then
       echo "   ++++++ Checking TKG Tenant Name for the workload cluster(s)"
@@ -519,4 +507,3 @@ echo "NSX url: https://$(jq -c -r .nsx.manager.basename $jsonFile).$(jq -c -r .d
 echo "To access Avi UI:"
 echo "  - configure $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile) as a socks proxy"
 echo "  - Avi url: https://$(jq -c -r .avi.controller.cidr avi.json | cut -d'/' -f1 | cut -d'.' -f1-3).$(jq -c -r .avi.controller.ip avi.json)"
-
