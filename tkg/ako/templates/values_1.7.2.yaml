@@ -17,8 +17,8 @@ AKOSettings:
   apiServerPort: 8080 # Internal port for AKO's API server for the liveness probe of the AKO pod default=8080
   deleteConfig: 'false' # Has to be set to true in configmap if user wants to delete AKO created objects from AVI 
   disableStaticRouteSync: 'false' # If the POD networks are reachable from the Avi SE, set this knob to true.
-  clusterName: ${clusterName}   # A unique identifier for the kubernetes cluster, that helps distinguish the objects for this cluster in the avi controller. // MUST-EDIT
-  cniPlugin: '${cniPlugin}' # Set the string if your CNI is calico or openshift. enum: calico|canal|flannel|openshift|antrea|ncp
+  clusterName: tkg-cluster-workload-1   # A unique identifier for the kubernetes cluster, that helps distinguish the objects for this cluster in the avi controller. // MUST-EDIT
+  cniPlugin: 'antrea' # Set the string if your CNI is calico or openshift. enum: calico|canal|flannel|openshift|antrea|ncp
   enableEVH: false # This enables the Enhanced Virtual Hosting Model in Avi Controller for the Virtual Services
   layer7Only: false # If this flag is switched on, then AKO will only do layer 7 loadbalancing.
   # NamespaceSelector contains label key and value used for namespacemigration
@@ -48,8 +48,8 @@ NetworkSettings:
   #   - peer2
   # vipNetworkList: [] # Network information of the VIP network. Multiple networks allowed only for AWS Cloud.
   vipNetworkList:
-    - networkName: ${networkName}
-      cidr: ${cidr}
+    - networkName: my-segment-vip-data
+      cidr: 200.100.32.0/24
 
 ### This section outlines all the knobs  used to control Layer 7 loadbalancing settings in AKO.
 L7Settings:
@@ -67,11 +67,11 @@ L4Settings:
 
 ### This section outlines settings on the Avi controller that affects AKO's functionality.
 ControllerSettings:
-  serviceEngineGroupName: ${serviceEngineGroupName}   # Name of the ServiceEngine Group.
-  controllerVersion: '${controllerVersion}' # The controller API version
-  cloudName: Default-Cloud   # The configured cloud name on the Avi controller.
-  controllerHost: '${controllerHost}' # IP address or Hostname of Avi Controller
-  tenantName: ${tenantName}   # Name of the tenant where all the AKO objects will be created in AVI.
+  serviceEngineGroupName: tkg   # Name of the ServiceEngine Group.
+  controllerVersion: '21.1.4' # The controller API version
+  cloudName: Default-Cloud # The configured cloud name on the Avi controller.
+  controllerHost: '200.100.11.11' # IP address or Hostname of Avi Controller
+  tenantName: tkg   # Name of the tenant where all the AKO objects will be created in AVI.
 
 nodePortSelector: # Only applicable if serviceType is NodePort
   key: ''
@@ -94,7 +94,7 @@ rbac:
 
 avicredentials:
   username: 'admin'
-  password: '${password}'
+  password: 'Avi_2022'
   authtoken:
   certificateAuthorityData:
 

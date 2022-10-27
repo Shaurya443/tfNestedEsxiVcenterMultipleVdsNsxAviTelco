@@ -583,6 +583,7 @@
           "ha_mode": "HA_MODE_SHARED_PAIR",
           "min_scaleout_per_vs": 2,
           "buffer_se": 0,
+          "vcenter_folder": "seg-default",
           "extra_shared_config_memory": 0,
           "vcpus_per_se": 2,
           "memory_per_se": 2048,
@@ -595,8 +596,9 @@
         {
           "name": "tkg",
           "ha_mode": "HA_MODE_SHARED",
-          "min_scaleout_per_vs": 2,
+          "min_scaleout_per_vs": 3,
           "buffer_se": 0,
+          "vcenter_folder": "seg-tkg",
           "extra_shared_config_memory": 0,
           "vcpus_per_se": 2,
           "memory_per_se": 2048,
@@ -613,6 +615,16 @@
           {
             "name": "app-dns",
             "network_ref": "my-segment-vip-mgmt",
+            "services": [
+              {
+                "port": 53
+              }
+            ]
+          },
+          {
+            "name": "app-1",
+            "network_ref": "my-segment-vip-data",
+            "se_group_ref": "tkg",
             "services": [
               {
                 "port": 53
@@ -711,7 +723,8 @@
           "control_plane_count": "1",
           "ako_version": "1.7.2",
           "ako_tenant_ref": "tkg",
-          "ako_service_engine_group_ref": "tkg"
+          "ako_service_engine_group_ref": "tkg",
+          "ako_vip_network_name_ref": "my-segment-vip-data"
         },
         {
           "name": "tkg-cluster-workload-2",
@@ -733,7 +746,8 @@
           "control_plane_count": "1",
           "ako_version": "1.7.2",
           "ako_tenant_ref": "tkg",
-          "ako_service_engine_group_ref": "tkg"
+          "ako_service_engine_group_ref": "tkg",
+          "ako_vip_network_name_ref": "my-segment-vip-data"
         }
       ]
     }

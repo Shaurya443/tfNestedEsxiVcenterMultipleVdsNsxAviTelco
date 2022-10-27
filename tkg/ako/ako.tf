@@ -4,7 +4,8 @@ data "template_file" "workload_values" {
   vars = {
     clusterName = var.tkg.clusters.workloads[count.index].name
     cniPlugin = "antrea"
-
+    networkName =
+    cidr =
     serviceEngineGroupName = var.tkg.clusters.workloads[count.index].ako_service_engine_group_ref
     controllerVersion = var.avi.controller.version
     controllerHost = cidrhost(var.avi.controller.cidr, var.nsx.config.segments_overlay[count.index].avi_controller)
