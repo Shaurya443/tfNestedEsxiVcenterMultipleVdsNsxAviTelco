@@ -403,6 +403,9 @@ tf_init_apply () {
   echo "Ending timestamp: $(date)"
   cd - > /dev/null
 }
+echo ""
+echo ""
+echo ""
 #
 # Build of a folder on the underlay infrastructure
 #
