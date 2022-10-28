@@ -34,6 +34,25 @@ test_if_file_exists () {
   fi
 }
 #
+test_if_ref_from_list_exists_in_another_list () {
+  # $1 list + ref to check
+  # $2 list + ref to check against
+  # $3 json file
+  # $4 message to display
+  # $5 message to display if match
+  # $6 error to display
+  echo $4
+  for ref in $(jq -c -r $1 $3)
+  do
+    check_status=0
+    for item_name in $(jq -c -r $2 $3)
+    do
+      if [[ $ref = $item_name ]] ; then check_status=1 ; echo "$5found: $ref, OK"; fi
+    done
+  done
+  if [[ $check_status -eq 0 ]] ; then echo "$6$ref" ; exit 255 ; fi
+}
+#
 # Sanity checks
 #
 echo ""
@@ -144,10 +163,16 @@ do
   fi
 done
 echo "   ++++++ Amount of external vip is $(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_vips | length' $jsonFile), amount of vip needed: $tier0_vips, OK"
-
-
+#
+test_if_ref_from_list_exists_in_another_list ".nsx.config.tier1s[].tier0" \
+                                             ".nsx.config.tier0s[].display_name" \
+                                             "$jsonFile" \
+                                             "   +++ Checking Tiers 0 in tiers 1" \
+                                             "   ++++++ Tier0 " \
+                                             "   ++++++ERROR++++++ Tier0 not found: "
+#
+#
 # check Avi Parameters
-## check Avi OVA
 rm -f avi.json
 IFS=$'\n'
 avi_json=""
@@ -249,23 +274,31 @@ fi
 avi_json=$(echo $avi_json | jq '. | del (.avi.config.virtual_services.dns)')
 avi_json=$(echo $avi_json | jq '.avi.config.virtual_services += {"dns": '$(echo $avi_dns_vs)'}')
 echo $avi_json | jq . | tee avi.json > /dev/null
-## check Avi IPAM Networks against Avi Cloud Networks segments
-echo "   +++ Checking Avi IPAM networks settings"
-for network_ipam in $(jq -c -r .avi.config.ipam.networks[] $jsonFile)
-do
-  avi_ipam_network=0
-  for network in $(jq -c -r .avi.config.cloud.networks[] $jsonFile)
-  do
-    if [[ $(echo $network_ipam) == $(echo $network | jq -c -r .name) ]] ; then
-      avi_ipam_network=1
-      echo "   ++++++ Avi IPAM network found: $(echo $network | jq -c -r .name), OK"
-    fi
-  done
-  if [[ $avi_ipam_network -eq 0 ]] ; then
-    echo "   ++++++ERROR++++++ $(echo $network_ipam) segment not found!!"
-    exit 255
-  fi
-done
+## checking if Avi IPAM Networks exists in Avi cloud networks
+test_if_ref_from_list_exists_in_another_list ".avi.config.ipam.networks[]" \
+                                             ".avi.config.cloud.networks[].name" \
+                                             "$jsonFile" \
+                                             "   +++ Checking IPAM networks" \
+                                             "   ++++++ Avi IPAM network " \
+                                             "   ++++++ERROR++++++ Network not found: "
+# checking if seg ref in DNS VS exist in seg list
+if [ $(jq -c -r '.avi.config.virtual_services.dns | length' $jsonFile) -gt 0 ] ; then
+  test_if_ref_from_list_exists_in_another_list ".avi.config.virtual_services.dns[].se_group_ref" \
+                                               ".avi.config.service_engine_groups[].name" \
+                                               "$jsonFile" \
+                                               "   +++ Checking Service Engine Group in DNS VS" \
+                                               "   ++++++ Service Engine Group " \
+                                               "   ++++++ERROR++++++ segment not found: "
+fi
+# checking if seg ref in HTTP VS exist in seg list
+if [ $(jq -c -r '.avi.config.virtual_services.http | length' $jsonFile) -gt 0 ] ; then
+  test_if_ref_from_list_exists_in_another_list ".avi.config.virtual_services.http[].se_group_ref" \
+                                               ".avi.config.service_engine_groups[].name" \
+                                               "$jsonFile" \
+                                               "   +++ Checking Service Engine Group in HTTP VS" \
+                                               "   ++++++ Service Engine Group " \
+                                               "   ++++++ERROR++++++ segment not found: "
+fi
 #
 # check TKG Parameters
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then

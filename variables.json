@@ -615,6 +615,7 @@
           {
             "name": "app-dns",
             "network_ref": "my-segment-vip-mgmt",
+            "se_group_ref": "Default-Group",
             "services": [
               {
                 "port": 53
