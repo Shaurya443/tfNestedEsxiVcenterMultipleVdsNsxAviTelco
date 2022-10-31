@@ -164,12 +164,12 @@
           "max_mtu": 1700
         },
         "nsx_external": {
-          "name": "nsx-external-vds",
+          "name": "vip-external-bgp",
           "max_mtu": 1700,
           "cidr": "172.16.100.0/24",
           "external_gw_ip": "172.16.100.100",
-          "tier0_vips": ["172.16.100.110", "172.16.100.120"],
-          "tier0_ips": ["172.16.100.111", "172.16.100.112", "172.16.100.121", "172.16.100.122"]
+          "tier0_vips": ["172.16.100.110", "172.16.100.120", "172.16.100.130"],
+          "tier0_ips": ["172.16.100.111", "172.16.100.112", "172.16.100.121", "172.16.100.122", "172.16.100.131", "172.16.100.132"]
         }
       }
     }
@@ -335,12 +335,16 @@
         {
           "display_name": "my-edge-cluster-02",
           "members_name": ["edge-03", "edge-04"]
+        },
+        {
+          "display_name": "my-edge-cluster-03",
+          "members_name": ["edge-05", "edge-06"]
         }
       ],
       "tier0s":
       [
         {
-          "display_name": "tier0-oam-vrf",
+          "display_name": "tier0-static",
           "ha_mode" : "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-01",
           "interfaces" :
@@ -377,7 +381,7 @@
           ]
         },
         {
-          "display_name": "tier0-signaling-vrf",
+          "display_name": "tier0-bgp-oam-vrf",
           "ha_mode" : "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-02",
           "interfaces" :
@@ -412,19 +416,68 @@
               "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
             }
           ]
+        },
+        {
+          "display_name": "tier0-bgp-signaling-vrf",
+          "ha_mode" : "ACTIVE_STANDBY",
+          "edge_cluster_name": "my-edge-cluster-03",
+          "interfaces" :
+          [
+            {
+              "edge_name": "edge-05",
+              "segment_name": "segment-external",
+              "type" : "EXTERNAL",
+              "display_name" : "if-ext-0",
+              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
+            },
+            {
+              "edge_name": "edge-06",
+              "segment_name": "segment-external",
+              "type" : "EXTERNAL",
+              "display_name" : "if-ext-1",
+              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_ips"
+            }
+          ],
+          "static_routes":
+          [
+            {
+              "display_name" : "default-route",
+              "network" : "0.0.0.0/0",
+              "next_hops" : [ { "ip_address": "172.16.100.100" } ]
+            }
+          ],
+          "ha_vips":
+          [
+            {
+              "interfaces" : ["if-ext-0", "if-ext-1"],
+              "description": "this will consume IP defines in .vcenter.dvs.portgroup.nsx_external.tier0_vips"
+            }
+          ]
         }
       ],
       "tier1s":
       [
         {
-          "tier0": "tier0-oam-vrf",
+          "tier0": "tier0-static",
           "display_name": "tier1-mgmt",
           "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
           "dhcp_server": "dhcp-0"
         },
         {
-          "tier0": "tier0-signaling-vrf",
+          "tier0": "tier0-static",
           "display_name": "tier1-data",
+          "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
+          "dhcp_server": "dhcp-0"
+        },
+        {
+          "tier0": "tier0-bgp-oam-vrf",
+          "display_name": "tier1-oam",
+          "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
+          "dhcp_server": "dhcp-0"
+        },
+        {
+          "tier0": "tier0-bgp-signaling-vrf",
+          "display_name": "tier1-signaling",
           "route_advertisement_types": ["TIER1_STATIC_ROUTES", "TIER1_CONNECTED", "TIER1_LB_VIP"],
           "dhcp_server": "dhcp-0"
         }
@@ -432,42 +485,37 @@
       "segments_overlay":
       [
         {
-          "display_name": "my-segment-mgmt",
+          "display_name": "segment-mgmt",
           "tier1": "tier1-mgmt",
           "transport_zone": "tz_overlay",
           "cidr": "200.100.11.0/24",
           "gw": "1",
           "avi_controller": "11",
-          "dhcp_ranges": ["200.100.11.100-200.100.11.199"],
-          "description": "keep the management segment at the first position in the segment_overlay list - do not remove"
+          "dhcp_ranges": ["200.100.11.100-200.100.11.199"]
         },
         {
-          "display_name": "my-segment-tkg",
+          "display_name": "segment-tkg",
           "tier1": "tier1-data",
           "transport_zone": "tz_overlay",
-          "cidr": "200.100.21.0/24",
+          "cidr": "200.100.12.0/24",
           "gw": "1",
-          "dhcp_ranges": ["200.100.21.100-200.100.21.199"],
-          "description": "keep the segment server 1 at the second position in the segment_overlay list - do not remove",
-          "avi_app_server_ips": ["200.100.21.11", "200.100.21.12", "200.100.21.13"]
+          "dhcp_ranges": ["200.100.12.100-200.100.12.199"]
         },
         {
-          "display_name": "my-segment-vip-mgmt",
-          "tier1": "tier1-mgmt",
-          "transport_zone": "tz_overlay",
-          "cidr": "200.100.31.0/24",
-          "gw": "1",
-          "dhcp_ranges": ["200.100.31.10-200.100.31.19"],
-          "description": "keep the vip segment 1 at the fourth position in the segment_overlay list - do not remove"
-        },
-        {
-          "display_name": "my-segment-vip-data",
+          "display_name": "segment-vip-mgmt",
           "tier1": "tier1-data",
           "transport_zone": "tz_overlay",
-          "cidr": "200.100.32.0/24",
+          "cidr": "200.100.13.0/24",
           "gw": "1",
-          "dhcp_ranges": ["200.100.32.10-200.100.32.19"],
-          "description": "keep the vip segment 1 at the fourth position in the segment_overlay list - do not remove"
+          "dhcp_ranges": ["200.100.13.10-200.100.13.19"]
+        },
+        {
+          "display_name": "segment-vip-data",
+          "tier1": "tier1-data",
+          "transport_zone": "tz_overlay",
+          "cidr": "200.100.14.0/24",
+          "gw": "1",
+          "dhcp_ranges": ["200.100.14.10-200.100.14.19"]
         }
       ]
     }
@@ -486,7 +534,7 @@
       "version": "21.1.4",
       "ssl_key_name": "avi.key",
       "ssl_cert_name": "avi.cert",
-      "network_ref": "my-segment-mgmt"
+      "network_ref": "segment-mgmt"
     },
     "config": {
       "create": true,
@@ -537,43 +585,70 @@
       ],
       "ipam": {
         "networks": [
-          "my-segment-vip-mgmt", "my-segment-vip-data", "nsx-external-vds-pg"
+          "segment-vip-mgmt", "segment-vip-data", "vip-external-bgp-pg"
         ]
       },
       "cloud": {
         "name": "Default-Cloud",
         "networks": [
           {
-            "name": "my-segment-mgmt",
+            "name": "segment-mgmt",
             "avi_ipam_pool": "200.100.11.210-200.100.11.230",
-            "dhcp_enabled": true,
+            "dhcp_enabled": false,
             "exclude_discovered_subnets": true,
             "management": true,
             "type": "V4"
           },
           {
-            "name": "my-segment-vip-mgmt",
-            "avi_ipam_pool": "200.100.31.210-200.100.31.230",
+            "name": "segment-tkg",
+            "avi_ipam_pool": "200.100.12.210-200.100.12.230",
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
             "management": false,
             "type": "V4"
           },
           {
-            "name": "my-segment-vip-data",
-            "avi_ipam_pool": "200.100.32.210-200.100.32.230",
+            "name": "segment-vip-mgmt",
+            "avi_ipam_pool": "200.100.13.210-200.100.13.230",
             "dhcp_enabled": true,
             "exclude_discovered_subnets": true,
             "management": false,
             "type": "V4"
           },
           {
-            "name": "nsx-external-vds-pg",
+            "name": "segment-vip-data",
+            "avi_ipam_pool": "200.100.14.210-200.100.14.230",
+            "dhcp_enabled": true,
+            "exclude_discovered_subnets": true,
+            "management": false,
+            "type": "V4"
+          },
+          {
+            "name": "vip-external-bgp-pg",
             "avi_ipam_pool": "172.16.100.201-172.16.100.204",
             "dhcp_enabled": false,
             "exclude_discovered_subnets": true,
             "management": false,
             "type": "V4"
+          }
+        ],
+        "additional_subnets": [
+          {
+            "name_ref": "vip-external-bgp-pg",
+            "subnets": [
+              {
+                "cidr": "1.1.1.0/24",
+                "range": "1.1.1.1-1.1.1.10",
+                "type": "V4",
+                "bgp_label": "tier0-bgp-oam-vrf"
+              },
+              {
+                "cidr": "2.2.2.0/24",
+                "range": "2.2.2.1-2.2.2.10",
+                "type": "V4",
+                "bgp_label": "tier0-bgp-signaling-vrf"
+              }
+            ]
           }
         ]
       },
@@ -614,7 +689,7 @@
         "dns": [
           {
             "name": "app-dns",
-            "network_ref": "my-segment-vip-mgmt",
+            "network_ref": "segment-vip-mgmt",
             "se_group_ref": "Default-Group",
             "services": [
               {
@@ -624,7 +699,7 @@
           },
           {
             "name": "app-1",
-            "network_ref": "my-segment-vip-data",
+            "network_ref": "segment-vip-data",
             "se_group_ref": "tkg",
             "services": [
               {
@@ -640,27 +715,6 @@
         "generate_values_yaml": true,
         "deploy_ako": false
       }
-    },
-    "app": {
-      "create": false,
-      "basename": "avi-app-",
-      "description": "it will deploy server(s) on segment nsx.config.segments_overlay[1] based on the amount of IP defined in nsx.config.segments_overlay[1].avi_app_server_ips",
-      "ova_location": "/home/ubuntu/bin/focal-server-cloudimg-amd64.ova",
-      "cpu": 4,
-      "memory": 8192,
-      "disk": 32,
-      "public_key_path": "~/.ssh/cloudKey.pub",
-      "private_key_path": "~/.ssh/cloudKey",
-      "username": "ubuntu",
-      "netplan_file": "/etc/netplan/50-cloud-init.yaml",
-      "mtu": 1300,
-      "nsxt_vm_tags": "avi-app-tag",
-      "nsxt_group_name": "avi-app-nsx-group",
-      "avi_app_docker_image": "tacobayle/avi_app",
-      "hello_world_app_tcp_port": "80",
-      "avi_app_tcp_port": "8080",
-      "hackazon_docker_image": "mutzel/all-in-one-hackazon:postinstall",
-      "hackazon_tcp_port": "8081"
     }
   },
   "tkg": {
@@ -669,7 +723,7 @@
     "tanzu_bin_location": "/home/ubuntu/bin/tanzu-cli-bundle-linux-amd64.tar.gz",
     "k8s_bin_location": "/home/ubuntu/bin/kubectl-linux-v1.23.8+vmware.2.gz",
     "ova_location": "/home/ubuntu/bin/ubuntu-2004-kube-v1.23.8+vmware.2-tkg.1-85a434f93857371fccb566a414462981.ova",
-    "ova_network": "my-segment-mgmt",
+    "ova_network": "segment-mgmt",
     "ova_folder_template": "tkg-template",
     "clusters": {
       "management_template": true,
@@ -681,17 +735,17 @@
         "vcenter_folder": "tkg-cluster-mgmt",
         "vcenter_resource_pool": "tkg-cluster-mgmt",
         "avi_cloud_name": "Default-Cloud",
-        "avi_control_plane_network": "my-segment-vip-mgmt",
-        "avi_data_network": "my-segment-vip-mgmt",
-        "avi_mgmt_cluster_control_plane_vip_network_name": "my-segment-vip-mgmt",
-        "avi_mgmt_cluster_vip_network_name": "my-segment-vip-mgmt",
+        "avi_control_plane_network": "segment-vip-mgmt",
+        "avi_data_network": "segment-vip-mgmt",
+        "avi_mgmt_cluster_control_plane_vip_network_name": "segment-vip-mgmt",
+        "avi_mgmt_cluster_vip_network_name": "segment-vip-mgmt",
         "avi_management_cluster_service_engine_group": "Default-Group",
         "avi_service_engine_group": "Default-Group",
         "cluster_cidr": "100.96.0.0/11",
         "public_key_path": "/home/ubuntu/.ssh/cloudKey.pub",
         "service_cidr": "100.64.0.0/13",
         "avi_username": "tkg",
-        "vsphere_network": "my-segment-mgmt",
+        "vsphere_network": "segment-mgmt",
         "control_plane_disk": "20",
         "control_plane_memory": "4096",
         "control_plane_cpu": "2",
@@ -703,6 +757,11 @@
       "workload_template_description": "this flag will render the yml file in the external gw without building the workload cluster(s)",
       "workload_build": true,
       "workload_build_description": "this flag will render the yml file in the external gw and build the workload cluster(s)",
+      "ako_vip_network_name_ref": "vip-external-bgp-pg",
+      "ako_default_bgp_peer_label_ref": "tier0-bgp-oam-vrf",
+      "ako_service_engine_group_ref": "tkg",
+      "ako_version": "1.7.2",
+      "ako_tenant_ref": "tkg",
       "workloads": [
         {
           "name": "tkg-cluster-workload-1",
@@ -712,7 +771,7 @@
           "service_cidr": "100.64.0.0/13",
           "vcenter_folder": "tkg-cluster-workload-1",
           "vcenter_resource_pool": "tkg-cluster-workload-1",
-          "vsphere_network": "my-segment-tkg",
+          "vsphere_network": "segment-tkg",
           "public_key_path": "/home/ubuntu/.ssh/cloudKey.pub",
           "worker_disk": "20",
           "worker_memory": "4096",
@@ -721,11 +780,7 @@
           "control_plane_disk": "20",
           "control_plane_memory": "4096",
           "control_plane_cpu": "2",
-          "control_plane_count": "1",
-          "ako_version": "1.7.2",
-          "ako_tenant_ref": "tkg",
-          "ako_service_engine_group_ref": "tkg",
-          "ako_vip_network_name_ref": "my-segment-vip-data"
+          "control_plane_count": "1"
         },
         {
           "name": "tkg-cluster-workload-2",
@@ -735,7 +790,7 @@
           "service_cidr": "100.64.0.0/13",
           "vcenter_folder": "tkg-cluster-workload-2",
           "vcenter_resource_pool": "tkg-cluster-workload-2",
-          "vsphere_network": "my-segment-tkg",
+          "vsphere_network": "segment-tkg",
           "public_key_path": "/home/ubuntu/.ssh/cloudKey.pub",
           "worker_disk": "20",
           "worker_memory": "4096",
@@ -744,11 +799,7 @@
           "control_plane_disk": "20",
           "control_plane_memory": "4096",
           "control_plane_cpu": "2",
-          "control_plane_count": "1",
-          "ako_version": "1.7.2",
-          "ako_tenant_ref": "tkg",
-          "ako_service_engine_group_ref": "tkg",
-          "ako_vip_network_name_ref": "my-segment-vip-data"
+          "control_plane_count": "1"
         }
       ]
     }

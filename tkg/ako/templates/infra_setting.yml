@@ -1,0 +1,17 @@
+  ubuntu@external-gw:~$ more infra-crd2.yml
+  apiVersion: ako.vmware.com/v1alpha1
+  kind: AviInfraSetting
+  metadata:
+    name: my-infra-setting2
+  spec:
+    seGroup:
+      name: tkg
+    network:
+      vipNetworks:
+        - networkName: nsx-external-vds-pg
+          cidr: 50.50.50.0/24
+      enableRhi: true
+      bgpPeerLabels:
+        - signaling-vrf
+    l7Settings:
+      shardSize: MEDIUM

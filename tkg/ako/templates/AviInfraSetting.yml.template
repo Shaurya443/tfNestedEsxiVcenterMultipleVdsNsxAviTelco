@@ -1,0 +1,16 @@
+apiVersion: ako.vmware.com/v1alpha1
+kind: AviInfraSetting
+metadata:
+  name: ${name}
+spec:
+  seGroup:
+    name: ${serviceEngineGroupName}
+  network:
+    vipNetworks:
+      - networkName: ${networkName}
+        cidr: ${cidr}
+    enableRhi: true
+    bgpPeerLabels:
+      - ${peer_bgp_label}
+  l7Settings:
+    shardSize: MEDIUM

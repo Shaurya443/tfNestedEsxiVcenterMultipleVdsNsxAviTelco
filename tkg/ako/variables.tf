@@ -1,4 +1,5 @@
 variable "tkg" {}
 variable "avi_password" {}
 variable "avi" {}
-variable "nsx" {}
+variable "vcenter" {}
+variable "external_gw" {}

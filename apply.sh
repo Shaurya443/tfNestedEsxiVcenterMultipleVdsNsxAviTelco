@@ -20,7 +20,7 @@ IFS=$'\n'
 #
 #
 #
-test_if_file_exists () {
+#test_if_file_exists () {
   # $1 file path to check
   # $2 message to display
   # $3 message to display if file is present
@@ -57,7 +57,7 @@ test_if_ref_from_list_exists_in_another_list () {
 #
 echo ""
 echo "==> Checking Ubuntu Settings for dns/ntp and external gw..."
-test_if_file_exists $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) "   +++ Checking Ubuntu OVA..." "   ++++++ " "   ++++++ERROR++++++ "
+#test_if_file_exists $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) "   +++ Checking Ubuntu OVA..." "   ++++++ " "   ++++++ERROR++++++ "
 #
 #
 echo ""
@@ -65,35 +65,56 @@ echo "==> Creating External gateway routes..."
 rm -f external_gw.json
 new_routes="[]"
 external_gw_json=$(jq -c -r . $jsonFile | jq .)
-for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
-do
-  for tier1 in $(jq -c -r .nsx.config.tier1s[] $jsonFile)
+# adding routes to external gw from nsx.config.segments_overlay
+if [[ $(jq -c -r '.nsx.config.segments_overlay | length' $jsonFile) -gt 0 ]] ; then
+  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
   do
-    if [[ $(echo $segment | jq -c -r .tier1) == $(echo $tier1 | jq -c -r .display_name) ]] ; then
+    for tier1 in $(jq -c -r .nsx.config.tier1s[] $jsonFile)
+    do
+      if [[ $(echo $segment | jq -c -r .tier1) == $(echo $tier1 | jq -c -r .display_name) ]] ; then
+        count=0
+        for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
+        do
+          if [[ $(echo $tier1 | jq -c -r .tier0) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
+            new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $segment | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile)'"}]')
+            echo "   +++ Route to $(echo $segment | jq -c -r .cidr) via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
+          fi
+          ((count++))
+        done
+      fi
+    done
+  done
+fi
+# adding routes to external gw from .avi.config.cloud.additional_subnets
+if [[ $(jq -c -r '.avi.config.cloud.additional_subnets | length' $jsonFile) -gt 0 ]] ; then
+  for network in $(jq -c -r .avi.config.cloud.additional_subnets[] $jsonFile)
+  do
+    for subnet in $(echo $network | jq -c -r '.subnets[]')
+    do
       count=0
       for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
       do
-        if [[ $(echo $tier1 | jq -c -r .tier0) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
-          new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $segment | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile)'"}]')
-          echo "   +++ Route to $(echo $segment | jq -c -r .cidr) via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
+        if [[ $(echo $subnet | jq -c -r .bgp_label) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
+          new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $subnet | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile)'"}]')
+          echo "   +++ Route to $(echo $subnet | jq -c -r .cidr) via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
         fi
         ((count++))
       done
-    fi
+    done
   done
-done
+fi
 external_gw_json=$(echo $external_gw_json | jq '.external_gw += {"routes": '$(echo $new_routes)'}')
 echo $external_gw_json | jq . | tee external_gw.json > /dev/null
 #
 #
 echo ""
 echo "==> Checking ESXi Settings..."
-test_if_file_exists $(jq -c -r .esxi.iso_source_location $jsonFile) "   +++ Checking ESXi ISO..." "   ++++++ " "   ++++++ERROR++++++ "
+#test_if_file_exists $(jq -c -r .esxi.iso_source_location $jsonFile) "   +++ Checking ESXi ISO..." "   ++++++ " "   ++++++ERROR++++++ "
 #
 #
 echo ""
 echo "==> Checking NSX Settings..."
-test_if_file_exists $(jq -c -r .nsx.content_library.ova_location $jsonFile) "   +++ Checking NSX OVA..." "   ++++++ " "   ++++++ERROR++++++ "
+#test_if_file_exists $(jq -c -r .nsx.content_library.ova_location $jsonFile) "   +++ Checking NSX OVA..." "   ++++++ " "   ++++++ERROR++++++ "
 rm -f nsx.json
 IFS=$'\n'
 nsx_json=""
@@ -171,6 +192,12 @@ test_if_ref_from_list_exists_in_another_list ".nsx.config.tier1s[].tier0" \
                                              "   ++++++ Tier0 " \
                                              "   ++++++ERROR++++++ Tier0 not found: "
 #
+test_if_ref_from_list_exists_in_another_list ".nsx.config.segments_overlay[].tier1" \
+                                             ".nsx.config.tier1s[].display_name" \
+                                             "$jsonFile" \
+                                             "   +++ Checking Tiers 1 in segments_overlay" \
+                                             "   ++++++ Tier1 " \
+                                             "   ++++++ERROR++++++ Tier1 not found: "
 #
 # check Avi Parameters
 rm -f avi.json
@@ -179,7 +206,7 @@ avi_json=""
 avi_networks="[]"
 echo ""
 echo "==> Checking Avi Settings..."
-test_if_file_exists $(jq -c -r .avi.content_library.ova_location $jsonFile) "   +++ Checking Avi OVA" "   ++++++ " "   ++++++ERROR++++++ "
+#test_if_file_exists $(jq -c -r .avi.content_library.ova_location $jsonFile) "   +++ Checking Avi OVA" "   ++++++ " "   ++++++ERROR++++++ "
 # check Avi Controller Network
 # copying segment info (ip, cidr, and gw keys) to avi.controller
 echo "   +++ Checking Avi Controller network settings"
@@ -302,11 +329,14 @@ fi
 #
 # check TKG Parameters
 if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
+  rm -f tkg.json
+  IFS=$'\n'
+  tkg_json=$(jq -c -r . $jsonFile)
   echo ""
   echo "==> Checking TKG Settings..."
-  test_if_file_exists $(jq -c -r .tkg.tanzu_bin_location $jsonFile) "   +++ Checking TKG Binaries" "   ++++++ " "   ++++++ERROR++++++ "
-  test_if_file_exists $(jq -c -r .tkg.k8s_bin_location $jsonFile) "   +++ Checking K8s Binaries" "   ++++++ " "   ++++++ERROR++++++ "
-  test_if_file_exists $(jq -c -r .tkg.ova_location $jsonFile) "   +++ Checking TKG OVA" "   ++++++ " "   ++++++ERROR++++++ "
+  #test_if_file_exists $(jq -c -r .tkg.tanzu_bin_location $jsonFile) "   +++ Checking TKG Binaries" "   ++++++ " "   ++++++ERROR++++++ "
+  #test_if_file_exists $(jq -c -r .tkg.k8s_bin_location $jsonFile) "   +++ Checking K8s Binaries" "   ++++++ " "   ++++++ERROR++++++ "
+  #test_if_file_exists $(jq -c -r .tkg.ova_location $jsonFile) "   +++ Checking TKG OVA" "   ++++++ " "   ++++++ERROR++++++ "
   #
   echo "   +++ Checking various settings for mgmt cluster"
   tkg_mgmt_network=0
@@ -317,13 +347,18 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       tkg_mgmt_network=1
       echo "   +++++++++ TKG mgmt segment found: $(echo $segment | jq -r .display_name), OK"
     fi
+    if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
+      tkg_json=$(echo $tkg_json | jq '.tkg += {"avi_cidr": '$(echo $segment | jq .cidr)'}' | jq '.tkg += {"avi_ip": '$(echo $segment | jq .avi_controller)'}')
+      echo "   +++++++++ Adding key avi_cidr: $(echo $segment | jq .cidr) to tkg.json: OK"
+      echo "   +++++++++ Adding key avi_ip: $(echo $segment | jq .avi_controller) to tkg.json: OK"
+    fi
   done
   if [[ $tkg_mgmt_network -eq 0 ]] ; then
     echo "   +++++++++ERROR+++++++++ $(jq -c -r .tkg.clusters.management.vsphere_network $jsonFile) segment not found!!"
     exit 255
   fi
   #
-  test_if_file_exists $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) "   ++++++ Checking TKG SSH key(s) for the mgmt cluster" "   +++++++++ " "   +++++++++ERROR+++++++++ "
+  #test_if_file_exists $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) "   ++++++ Checking TKG SSH key(s) for the mgmt cluster" "   +++++++++ " "   +++++++++ERROR+++++++++ "
   #
   echo "   +++ Checking various settings for workload cluster(s)"
   for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
@@ -335,6 +370,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       if [[ $(echo $segment | jq -r .display_name) == $(echo $cluster | jq -c -r .vsphere_network) ]] ; then
         tkg_workload_network=1
         echo "   +++++++++ TKG workload segment found: $(echo $segment | jq -r .display_name), OK"
+        break
       fi
     done
     if [[ $tkg_workload_network -eq 0 ]] ; then
@@ -342,59 +378,85 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       exit 255
     fi
     #
-    test_if_file_exists $(echo $cluster | jq -c -r .public_key_path) "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)" "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file " "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file "
+    #test_if_file_exists $(echo $cluster | jq -c -r .public_key_path) "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)" "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file " "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file "
     #
-    if [[ $(jq -c -r .avi.config.ako.generate_values_yaml $jsonFile) == true ]] ; then
-      echo "   ++++++ Checking TKG Tenant Name for the workload cluster(s)"
-      if [[ $(echo $cluster | jq -c -r .ako_tenant_ref) == "admin" ]] ; then
-        echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), tenant name $(echo $cluster | jq -c -r .ako_tenant_ref): OK."
-        ako_tenant=1
-      else
-        for tenant in $(jq -c -r .avi.config.tenants[] $jsonFile)
-        do
-          if [[ $(echo $tenant | jq -c -r .name) == $(echo $cluster | jq -c -r .ako_tenant_ref) ]] ; then
-            ako_tenant=1
-            echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), tenant $(echo $cluster | jq -c -r .ako_tenant_ref): OK."
-          fi
-        done
-      fi
-      if [[ $ako_tenant -eq 0 ]] ; then
-        echo "   +++++++++ERROR+++++++++ $(echo $cluster | jq -c -r .ako_tenant_ref) tenant not found!!"
-        exit 255
-      fi
-      #
-      echo "   ++++++ Checking TKG Service Engine Group for the workload cluster(s)"
-      if [[ $(echo $cluster | jq -c -r .ako_service_engine_group_ref) == "Default-Group" ]] ; then
-        echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), Service Engine Group $(echo $cluster | jq -c -r .ako_service_engine_group_ref): OK."
-        ako_seg=1
-      else
-        for seg in $(jq -c -r .avi.config.service_engine_groups[] $jsonFile)
-        do
-          if [[ $(echo $seg | jq -c -r .name) == $(echo $cluster | jq -c -r .ako_service_engine_group_ref) ]] ; then
-            ako_seg=1
-            echo "   +++++++++ cluster $(echo $cluster | jq -c -r .name), Service Engine Group $(echo $cluster | jq -c -r .ako_service_engine_group_ref): OK."
-          fi
-        done
-      fi
-      if [[ $ako_seg -eq 0 ]] ; then
-        echo "   +++++++++ERROR+++++++++ $(echo $cluster | jq -c -r .ako_service_engine_group_ref) seg not found!!"
-        exit 255
-      fi
-    fi
   done
+  echo "   +++ Checking various Avi/AKO settings for workload cluster(s)"
+  if [[ $(jq -c -r .avi.config.ako.generate_values_yaml $jsonFile) == true ]] ; then
+    echo "   ++++++ Checking TKG Tenant name"
+    ako_tenant=0
+    if [[ $(jq -c -r .tkg.clusters.ako_tenant_ref $jsonFile) == "admin" ]] ; then
+      echo "   +++++++++ AKO tenant $(jq -c -r .tkg.clusters.ako_tenant_ref $jsonFile): OK."
+      ako_tenant=1
+    else
+      for tenant_name in $(jq -c -r .avi.config.tenants[].name $jsonFile)
+      do
+        if [[ $(jq -c -r .tkg.clusters.ako_tenant_ref $jsonFile) == $(echo $tenant_name) ]] ; then
+          ako_tenant=1
+          echo "   +++++++++ AKO tenant $(jq -c -r .tkg.clusters.ako_tenant_ref $jsonFile): OK."
+          break
+        fi
+      done
+    fi
+    if [[ $ako_tenant -eq 0 ]] ; then
+      echo "   +++++++++ERROR+++++++++ AKO tenant $(jq -c -r .tkg.clusters.ako_tenant_ref $jsonFile) not found!!"
+      exit 255
+    fi
+    #
+    echo "   ++++++ Checking TKG Service Engine Group name"
+    ako_seg=0
+    if [[ $(jq -c -r .tkg.clusters.ako_service_engine_group_ref $jsonFile) == "Default-Group" ]] ; then
+      echo "   +++++++++ AKO Service Engine Group $(jq -c -r .tkg.clusters.ako_service_engine_group_ref $jsonFile): OK."
+      ako_seg=1
+    else
+      for seg in $(jq -c -r .avi.config.service_engine_groups[] $jsonFile)
+      do
+        if [[ $(echo $seg | jq -c -r .name) == $(jq -c -r .tkg.clusters.ako_service_engine_group_ref $jsonFile) ]] ; then
+          ako_seg=1
+          echo "   +++++++++ AKO Service Engine Group $(jq -c -r .tkg.clusters.ako_service_engine_group_ref $jsonFile): OK."
+          break
+        fi
+      done
+    fi
+    if [[ $ako_seg -eq 0 ]] ; then
+      echo "   +++++++++ERROR+++++++++ $(echo $cluster | jq -c -r .ako_service_engine_group_ref) seg not found!!"
+      exit 255
+    fi
+    #
+    echo "   ++++++ Checking default AKO BGP peer label"
+    ako_bgp_peer=0
+    for network in $(jq -c -r .avi.config.cloud.additional_subnets[] $jsonFile)
+    do
+      if [[ $(echo $network | jq -c -r .name_ref) == $(jq -c -r .tkg.clusters.ako_vip_network_name_ref $jsonFile) ]] ; then
+        for subnet in $(echo $network | jq -c -r '.subnets[]')
+        do
+          echo "   +++++++++ AKO default BGP peer label $(echo $bgp_labels): OK"
+          tkg_json=$(echo $tkg_json | jq '.tkg.clusters += {"ako_vip_network_cidr": "'$(echo $subnet | jq -c -r .cidr)'"}')
+          echo "   +++++++++ Adding key ako_vip_network_cidr: $(echo $subnet | jq -c -r .cidr) to tkg.json: OK"
+          ako_bgp_peer=1
+          break
+        done
+      fi
+    done
+    if [[ $ako_bgp_peer -eq 0 ]] ; then
+      echo "   +++++++++ERROR+++++++++  AKO BGP peer label $(jq -c -r .tkg.clusters.ako_vip_network_name_ref $jsonFile) not found!!"
+      exit 255
+    fi
+    echo "   ++++++ Creating AKO BGP peer label list"
+    for network in $(jq -c -r .avi.config.cloud.additional_subnets[] $jsonFile)
+    do
+      if [[ $(echo $network | jq -c -r .name_ref) == $(jq -c -r .tkg.clusters.ako_vip_network_name_ref $jsonFile) ]] ; then
+        bgp_labels="[]"
+        for subnet in $(echo $network | jq -c -r '.subnets[]')
+        do
+          bgp_labels=$(echo $bgp_labels | jq '. += ["'$(echo $subnet | jq -c -r .bgp_label)'"]')
+          echo "   +++++++++ Adding Avi BGP peers labels: $(echo $subnet | jq -c -r .bgp_label) to tkg.json: OK"
+        done
+        tkg_json=$(echo $tkg_json | jq '.tkg.clusters += {"ako_bgp_labels": '$(echo $bgp_labels | jq -c -r .)'}')
+      fi
+    done
+  fi
   #
-  rm -f tkg.json
-  IFS=$'\n'
-  tkg_json=$(jq -c -r . $jsonFile)
-  echo "   +++ Copying Avi IP and Avi CIDR to tkg.json"
-  for segment in $(jq -c -r .nsx.config.segments_overlay[] $jsonFile)
-  do
-    if [[ $(echo $segment | jq -r .display_name) == $(jq -c -r .avi.controller.network_ref $jsonFile) ]] ; then
-      tkg_json=$(echo $tkg_json | jq '.tkg += {"avi_cidr": '$(echo $segment | jq .cidr)'}' | jq '.tkg += {"avi_ip": '$(echo $segment | jq .avi_controller)'}')
-      echo "   ++++++ Adding key avi_cidr: $(echo $segment | jq .cidr) to tkg.json: OK"
-      echo "   ++++++ Adding key avi_ip: $(echo $segment | jq .avi_controller) to tkg.json: OK"
-    fi
-  done
   echo $tkg_json | jq . | tee tkg.json > /dev/null
 fi
 #
@@ -489,12 +551,6 @@ fi
 if [[ $(jq -c -r .avi.controller.create $jsonFile) == true ]] || [[ $(jq -c -r .avi.content_library.create $jsonFile) == true ]] ; then
   tf_init_apply "Build of Nested Avi Controllers - This should take around 15 minutes" avi/controllers ../../logs/tf_avi_controller.stdout ../../logs/tf_avi_controller.errors ../../avi.json
   tf_init_apply "Build of Avi Cert for TKG - This should take less than a minute" avi/tkg_cert ../../logs/tf_avi_tkg_cert.stdout ../../logs/tf_avi_tkg_cert.errors ../../avi.json
-fi
-#
-# Build of the Nested Avi App
-#
-if [[ $(jq -c -r .avi.app.create $jsonFile) == true ]] ; then
-  tf_init_apply "Build of Nested Avi App - This should take less than 10 minutes" avi/app ../../logs/tf_avi_app.stdout ../../logs/tfavi_app.errors ../../$jsonFile
 fi
 #
 # Build of the config of Avi

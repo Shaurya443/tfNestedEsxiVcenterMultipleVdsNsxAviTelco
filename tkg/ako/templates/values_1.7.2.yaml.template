@@ -26,7 +26,7 @@ AKOSettings:
   namespaceSelector:
     labelKey: ''
     labelValue: ''
-  servicesAPI: false # Flag that enables AKO in services API mode: https://kubernetes-sigs.github.io/service-apis/. Currently implemented only for L4. This flag uses the upstream GA APIs which are not backward compatible 
+  servicesAPI: true # Flag that enables AKO in services API mode: https://kubernetes-sigs.github.io/service-apis/. Currently implemented only for L4. This flag uses the upstream GA APIs which are not backward compatible
                      # with the advancedL4 APIs which uses a fork and a version of v1alpha1pre1 
   vipPerNamespace: 'false' # Enabling this flag would tell AKO to create Parent VS per Namespace in EVH mode
 
@@ -40,9 +40,10 @@ NetworkSettings:
   #     cidrs:
   #       - 10.0.0.1/24
   #       - 11.0.0.1/24
-  enableRHI: false # This is a cluster wide setting for BGP peering.
+  enableRHI: true # This is a cluster wide setting for BGP peering.
   nsxtT1LR: '' # T1 Logical Segment mapping for backend network. Only applies to NSX-T cloud.
-  bgpPeerLabels: [] # Select BGP peers using bgpPeerLabels, for selective VsVip advertisement.
+  bgpPeerLabels:
+    - ${default_peer_label}
   # bgpPeerLabels:
   #   - peer1
   #   - peer2
