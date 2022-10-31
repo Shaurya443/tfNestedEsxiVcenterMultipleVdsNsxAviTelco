@@ -20,7 +20,7 @@ IFS=$'\n'
 #
 #
 #
-#test_if_file_exists () {
+test_if_file_exists () {
   # $1 file path to check
   # $2 message to display
   # $3 message to display if file is present
@@ -57,7 +57,7 @@ test_if_ref_from_list_exists_in_another_list () {
 #
 echo ""
 echo "==> Checking Ubuntu Settings for dns/ntp and external gw..."
-#test_if_file_exists $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) "   +++ Checking Ubuntu OVA..." "   ++++++ " "   ++++++ERROR++++++ "
+test_if_file_exists $(jq -c -r .vcenter_underlay.cl.ubuntu_focal_file_path $jsonFile) "   +++ Checking Ubuntu OVA..." "   ++++++ " "   ++++++ERROR++++++ "
 #
 #
 echo ""
@@ -109,12 +109,12 @@ echo $external_gw_json | jq . | tee external_gw.json > /dev/null
 #
 echo ""
 echo "==> Checking ESXi Settings..."
-#test_if_file_exists $(jq -c -r .esxi.iso_source_location $jsonFile) "   +++ Checking ESXi ISO..." "   ++++++ " "   ++++++ERROR++++++ "
+test_if_file_exists $(jq -c -r .esxi.iso_source_location $jsonFile) "   +++ Checking ESXi ISO..." "   ++++++ " "   ++++++ERROR++++++ "
 #
 #
 echo ""
 echo "==> Checking NSX Settings..."
-#test_if_file_exists $(jq -c -r .nsx.content_library.ova_location $jsonFile) "   +++ Checking NSX OVA..." "   ++++++ " "   ++++++ERROR++++++ "
+test_if_file_exists $(jq -c -r .nsx.content_library.ova_location $jsonFile) "   +++ Checking NSX OVA..." "   ++++++ " "   ++++++ERROR++++++ "
 rm -f nsx.json
 IFS=$'\n'
 nsx_json=""
@@ -206,7 +206,7 @@ avi_json=""
 avi_networks="[]"
 echo ""
 echo "==> Checking Avi Settings..."
-#test_if_file_exists $(jq -c -r .avi.content_library.ova_location $jsonFile) "   +++ Checking Avi OVA" "   ++++++ " "   ++++++ERROR++++++ "
+test_if_file_exists $(jq -c -r .avi.content_library.ova_location $jsonFile) "   +++ Checking Avi OVA" "   ++++++ " "   ++++++ERROR++++++ "
 # check Avi Controller Network
 # copying segment info (ip, cidr, and gw keys) to avi.controller
 echo "   +++ Checking Avi Controller network settings"
@@ -334,9 +334,9 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
   tkg_json=$(jq -c -r . $jsonFile)
   echo ""
   echo "==> Checking TKG Settings..."
-  #test_if_file_exists $(jq -c -r .tkg.tanzu_bin_location $jsonFile) "   +++ Checking TKG Binaries" "   ++++++ " "   ++++++ERROR++++++ "
-  #test_if_file_exists $(jq -c -r .tkg.k8s_bin_location $jsonFile) "   +++ Checking K8s Binaries" "   ++++++ " "   ++++++ERROR++++++ "
-  #test_if_file_exists $(jq -c -r .tkg.ova_location $jsonFile) "   +++ Checking TKG OVA" "   ++++++ " "   ++++++ERROR++++++ "
+  test_if_file_exists $(jq -c -r .tkg.tanzu_bin_location $jsonFile) "   +++ Checking TKG Binaries" "   ++++++ " "   ++++++ERROR++++++ "
+  test_if_file_exists $(jq -c -r .tkg.k8s_bin_location $jsonFile) "   +++ Checking K8s Binaries" "   ++++++ " "   ++++++ERROR++++++ "
+  test_if_file_exists $(jq -c -r .tkg.ova_location $jsonFile) "   +++ Checking TKG OVA" "   ++++++ " "   ++++++ERROR++++++ "
   #
   echo "   +++ Checking various settings for mgmt cluster"
   tkg_mgmt_network=0
@@ -358,7 +358,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
     exit 255
   fi
   #
-  #test_if_file_exists $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) "   ++++++ Checking TKG SSH key(s) for the mgmt cluster" "   +++++++++ " "   +++++++++ERROR+++++++++ "
+  test_if_file_exists $(jq -c -r .tkg.clusters.management.public_key_path $jsonFile) "   ++++++ Checking TKG SSH key(s) for the mgmt cluster" "   +++++++++ " "   +++++++++ERROR+++++++++ "
   #
   echo "   +++ Checking various settings for workload cluster(s)"
   for cluster in $(jq -c -r .tkg.clusters.workloads[] $jsonFile)
@@ -378,7 +378,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       exit 255
     fi
     #
-    #test_if_file_exists $(echo $cluster | jq -c -r .public_key_path) "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)" "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file " "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file "
+    test_if_file_exists $(echo $cluster | jq -c -r .public_key_path) "   ++++++ Checking TKG SSH key(s) for the workload cluster(s)" "   +++++++++ cluster $(echo $cluster | jq -c -r .name), key file " "   +++++++++ERROR+++++++++ cluster $(echo $cluster | jq -c -r .name), key file "
     #
   done
   echo "   +++ Checking various Avi/AKO settings for workload cluster(s)"
