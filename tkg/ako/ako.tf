@@ -55,7 +55,7 @@ resource "null_resource" "transfer_ako_values_files" {
   }
 }
 
-resource "null_resource" "transfer_ako_values_files" {
+resource "null_resource" "transfer_other_files" {
   count = length(var.tkg.clusters.ako_bgp_labels)
 
   connection {

@@ -579,25 +579,25 @@ fi
 # Templating of TKG mgmt-cluster
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] ; then
-  tf_init_apply "Templating of TKG mgmt cluster - This should take less than one minute" tkg/mgmt_cluster_template ../../logs/tf_mgmt_cluster_template.stdout ../../logs/tf_mgmt_cluster_template.errors ../../tkg.json
+  tf_init_apply "Templating of TKG mgmt cluster - This should take less than one minute" tkg/mgmt_cluster_template ../../logs/tf_tkg_mgmt_cluster_template.stdout ../../logs/tf_tkg_mgmt_cluster_template.errors ../../tkg.json
 fi
 #
 # Build of TKG mgmt-cluster
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.management_build $jsonFile) == true ]] ; then
-  tf_init_apply "Building TKG mgmt cluster - This should take around 25 minutes" tkg/mgmt_cluster_build ../../logs/tf_mgmt_cluster_build.stdout ../../logs/tf_mgmt_cluster_build.errors ../../tkg.json
+  tf_init_apply "Building TKG mgmt cluster - This should take around 25 minutes" tkg/mgmt_cluster_build ../../logs/tf_tkg_mgmt_cluster_build.stdout ../../logs/tf_tkg_mgmt_cluster_build.errors ../../tkg.json
 fi
 #
 # Templating of TKG workload-clusters
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] ; then
-  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than one minute" tkg/workload_clusters_templates ../../logs/tf_workload_clusters_templates.stdout ../../logs/tf_workload_clusters_templates.errors ../../tkg.json
+  tf_init_apply "Templating of TKG workload cluster(s) - This should take less than one minute" tkg/workload_clusters_templates ../../logs/tf_tkg_workload_clusters_templates.stdout ../../logs/tf_tkg_workload_clusters_templates.errors ../../tkg.json
 fi
 #
 # Build of TKG workload-clusters
 #
 if [[ $(jq -c -r .external_gw.create $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_template $jsonFile) == true ]] && [[ $(jq -c -r .tkg.clusters.workload_build $jsonFile) == true ]] ; then
-  tf_init_apply "Building TKG workload cluster(s) - This should take around 40 minutes - for 2 clusters" tkg/workload_clusters_builds ../../logs/tf_workload_clusters_builds.stdout ../../logs/tf_workload_clusters_builds.errors ../../tkg.json
+  tf_init_apply "Building TKG workload cluster(s) - This should take around 40 minutes - for 2 clusters" tkg/workload_clusters_builds ../../logs/tf_tkg_workload_clusters_builds.stdout ../../logs/tf_tkg_workload_clusters_builds.errors ../../tkg.json
 fi
 #
 #
