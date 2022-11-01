@@ -141,6 +141,19 @@ nsx_json=$(jq -c -r . $jsonFile | jq '. | del (.nsx.config.segments)')
 nsx_json=$(echo $nsx_json | jq '.nsx.config += {"segments": '$(echo $nsx_segments)'}')
 echo $nsx_json | jq . | tee nsx.json > /dev/null
 #
+echo "   +++ Checking NSX if the amount of mgmt edge IP(s) are enough for all the edge node(s)..."
+ip_count_mgmt_edge=$(jq -c -r '.vcenter.dvs.portgroup.management.nsx_edge | length' $jsonFile)
+edge_node_count=0
+for edge_cluster in $(jq -c -r .nsx.config.edge_clusters[] $jsonFile)
+do
+  edge_node_count=$(($edge_node_count + $(echo $edge_cluster | jq -c -r '.members_name | length' )))
+done
+if [[ ip_count_mgmt_edge -ge $edge_node_count ]] ; then
+  echo "   ++++++ Found mgmt edge IP(s): $ip_count_mgmt_edge required: $edge_node_count, OK"
+else
+  echo "   ++++++ERROR++++++ Found mgmt edge IP(s): $ip_count_mgmt_edge required: $edge_node_count"
+  exit 255
+fi
 #
 echo "   +++ Checking NSX if the amount of external IP(s) are enough for all the interfaces of the tier0(s)..."
 ip_count_external_tier0=$(jq -c -r '.vcenter.dvs.portgroup.nsx_external.tier0_ips | length' $jsonFile)
@@ -442,7 +455,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
       echo "   +++++++++ERROR+++++++++  AKO BGP peer label $(jq -c -r .tkg.clusters.ako_vip_network_name_ref $jsonFile) not found!!"
       exit 255
     fi
-    echo "   ++++++ Creating AKO BGP peer label list"
+    echo "   ++++++ Adding AKO BGP peer label list to tkg.json"
     for network in $(jq -c -r .avi.config.cloud.additional_subnets[] $jsonFile)
     do
       if [[ $(echo $network | jq -c -r .name_ref) == $(jq -c -r .tkg.clusters.ako_vip_network_name_ref $jsonFile) ]] ; then
@@ -450,7 +463,7 @@ if [[ $(jq -c -r .tkg.prep $jsonFile) == true ]] ; then
         for subnet in $(echo $network | jq -c -r '.subnets[]')
         do
           bgp_labels=$(echo $bgp_labels | jq '. += ["'$(echo $subnet | jq -c -r .bgp_label)'"]')
-          echo "   +++++++++ Adding Avi BGP peers labels: $(echo $subnet | jq -c -r .bgp_label) to tkg.json: OK"
+          echo "   +++++++++ Adding Avi BGP peers labels $(echo $subnet | jq -c -r .bgp_label) : OK"
         done
         tkg_json=$(echo $tkg_json | jq '.tkg.clusters += {"ako_bgp_labels": '$(echo $bgp_labels | jq -c -r .)'}')
       fi
@@ -498,8 +511,6 @@ tf_init_apply () {
   echo "Ending timestamp: $(date)"
   cd - > /dev/null
 }
-echo ""
-echo ""
 echo ""
 #
 # Build of a folder on the underlay infrastructure
