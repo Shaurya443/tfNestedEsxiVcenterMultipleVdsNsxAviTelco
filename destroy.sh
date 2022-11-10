@@ -73,9 +73,6 @@ cd ../..
 cd avi/controllers
 rm -fr terraform.tfstate .terraform.lock.hcl .terraform
 cd ../..
-cd avi/app
-rm -fr terraform.tfstate .terraform.lock.hcl .terraform
-cd ../..
 cd avi/config
 rm -fr terraform.tfstate .terraform.lock.hcl .terraform
 cd ../..
