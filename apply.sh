@@ -94,7 +94,7 @@ if [[ $(jq -c -r '.avi.config.cloud.additional_subnets | length' $jsonFile) -gt 
       count=0
       for tier0 in $(jq -c -r .nsx.config.tier0s[] $jsonFile)
       do
-        if [[ $(echo $subnet | jq -c -r .bgp_label) == $(echo $tier0 | jq -c -r .display_name) ]] ; then
+        if [[ $(echo $subnet | jq -c -r .bgp_label) == $(echo $tier0 | jq -c -r .avi_bgp_label) ]] ; then
           new_routes=$(echo $new_routes | jq '. += [{"to": "'$(echo $subnet | jq -c -r .cidr)'", "via": "'$(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile)'"}]')
           echo "   +++ Route to $(echo $subnet | jq -c -r .cidr) via $(jq -c -r .vcenter.dvs.portgroup.nsx_external.tier0_vips["$count"] $jsonFile) added: OK"
         fi
@@ -603,10 +603,36 @@ fi
 #
 # Output message
 #
-echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++"
-echo "Configure your local DNS by using $(jq -c -r .dns.nameserver $jsonFile)"
-echo "vCenter url: https://$(jq -c -r .vcenter.name $jsonFile).$(jq -c -r .dns.domain $jsonFile)"
-echo "NSX url: https://$(jq -c -r .nsx.manager.basename $jsonFile).$(jq -c -r .dns.domain $jsonFile)"
-echo "To access Avi UI:"
-echo "  - configure $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile) as a socks proxy"
-echo "  - Avi url: https://$(jq -c -r .avi.controller.cidr avi.json | cut -d'/' -f1 | cut -d'.' -f1-3).$(jq -c -r .avi.controller.ip avi.json)"
+echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++" | tee output.txt
+echo "Configure your local DNS by using $(jq -c -r .dns.nameserver $jsonFile)" | tee output.txt
+echo "vCenter url: https://$(jq -c -r .vcenter.name $jsonFile).$(jq -c -r .dns.domain $jsonFile)" | tee output.txt
+echo "NSX url: https://$(jq -c -r .nsx.manager.basename $jsonFile).$(jq -c -r .dns.domain $jsonFile)" | tee output.txt
+echo "To access Avi UI:" | tee output.txt
+echo "  - configure $(jq -c -r .vcenter.dvs.portgroup.management.external_gw_ip $jsonFile) as a socks proxy" | tee output.txt
+echo "  - Avi url: https://$(jq -c -r .avi.controller.cidr avi.json | cut -d'/' -f1 | cut -d'.' -f1-3).$(jq -c -r .avi.controller.ip avi.json)" | tee output.txt
+echo "To Access your TKG cluster:" | tee output.txt
+echo '  - tanzu cluster list' | tee output.txt
+echo '  - tanzu cluster kubeconfig get tkg-cluster-workload-1 --admin' | tee output.txt
+echo '  - kubectl config use-context tkg-cluster-workload-1-admin@tkg-cluster-workload-1' | tee output.txt
+echo "To Add Docker registry Account to your TKG cluster:" | tee output.txt
+echo '  - kubectl create secret docker-registry docker --docker-server=docker.io --docker-username=******** --docker-password=******** --docker-email=********' | tee output.txt
+echo '  - kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [{\"name\": \"docker\"}]}"' | tee output.txt
+echo "Avi/NSX: Configure BGP sessions between tier0s and service Engines" | tee output.txt
+echo "Avi: Configure the following subnets on the top the network called $(jq -r .vcenter.dvs.portgroup.nsx_external.name $jsonFile)" | tee output.txt
+for network in $(jq -c -r .avi.config.cloud.additional_subnets[] $jsonFile)
+  do
+    if [[ $(echo $network | jq -c -r .name_ref) == $(jq -c -r .vcenter.dvs.portgroup.nsx_external.name $jsonFile) ]] ; then
+      for subnet in $(echo $network | jq -c -r '.subnets[]')
+      do
+        echo "  - $(echo $subnet | jq -c -r .cidr)" | tee output.txt
+      done
+    fi
+  done
+echo "To Add AKO leveraging helm Install (from the external-gw):" | tee output.txt
+echo "  - helm --debug install ako/ako --generate-name --version $(jq -c -r .tkg.clusters.ako_version $jsonFile) -f path-to-values.yml --namespace=avi-system" | tee output.txt
+echo "Create InfraSetting CRD (from the external-gw):" | tee output.txt
+echo "  - kubectl apply -f avi-infra-settings-workload-vrf-X.yml" | tee output.txt
+echo "Create CNF/App (from the external-gw):" | tee output.txt
+echo "  - kubectl apply -f k8s-deployment-X.yml" | tee output.txt
+echo "Create svc (from the external-gw):" | tee output.txt
+echo "  - kubectl apply -f k8s-svc-X.yml" | tee output.txt

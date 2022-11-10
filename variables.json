@@ -382,6 +382,7 @@
         },
         {
           "display_name": "tier0-bgp-oam-vrf",
+          "avi_bgp_label": "blue",
           "ha_mode" : "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-02",
           "interfaces" :
@@ -419,6 +420,7 @@
         },
         {
           "display_name": "tier0-bgp-signaling-vrf",
+          "avi_bgp_label": "red",
           "ha_mode" : "ACTIVE_STANDBY",
           "edge_cluster_name": "my-edge-cluster-03",
           "interfaces" :
@@ -640,13 +642,13 @@
                 "cidr": "1.1.1.0/24",
                 "range": "1.1.1.1-1.1.1.10",
                 "type": "V4",
-                "bgp_label": "tier0-bgp-oam-vrf"
+                "bgp_label": "blue"
               },
               {
                 "cidr": "2.2.2.0/24",
                 "range": "2.2.2.1-2.2.2.10",
                 "type": "V4",
-                "bgp_label": "tier0-bgp-signaling-vrf"
+                "bgp_label": "red"
               }
             ]
           }
@@ -671,7 +673,7 @@
         {
           "name": "tkg",
           "ha_mode": "HA_MODE_SHARED",
-          "min_scaleout_per_vs": 3,
+          "min_scaleout_per_vs": 2,
           "buffer_se": 0,
           "vcenter_folder": "avi-seg-tkg",
           "extra_shared_config_memory": 0,
@@ -758,7 +760,7 @@
       "workload_build": true,
       "workload_build_description": "this flag will render the yml file in the external gw and build the workload cluster(s)",
       "ako_vip_network_name_ref": "vip-external-bgp-pg",
-      "ako_default_bgp_peer_label_ref": "tier0-bgp-oam-vrf",
+      "ako_default_bgp_peer_label_ref": "blue",
       "ako_service_engine_group_ref": "tkg",
       "ako_version": "1.7.2",
       "ako_tenant_ref": "tkg",
